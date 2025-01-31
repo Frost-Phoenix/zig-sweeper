@@ -1,45 +1,34 @@
-//! By convention, main.zig is where your main function lives in the case that
-//! you are building an executable. If you are making a library, the convention
-//! is to delete this file and start with root.zig instead.
+// raylib-zig (c) Nikolas Wipper 2023
 
-pub fn main() !void {
-    // Prints to stderr (it's a shortcut based on `std.io.getStdErr()`)
-    std.debug.print("All your {s} are belong to us.\n", .{"codebase"});
+const rl = @import("raylib");
 
-    // stdout is for the actual output of your application, for example if you
-    // are implementing gzip, then only the compressed bytes should be sent to
-    // stdout, not any debugging messages.
-    const stdout_file = std.io.getStdOut().writer();
-    var bw = std.io.bufferedWriter(stdout_file);
-    const stdout = bw.writer();
+pub fn main() anyerror!void {
+    // Initialization
+    //--------------------------------------------------------------------------------------
+    const screenWidth = 800;
+    const screenHeight = 450;
 
-    try stdout.print("Run `zig build test` to run the tests.\n", .{});
+    rl.initWindow(screenWidth, screenHeight, "raylib-zig [core] example - basic window");
+    defer rl.closeWindow(); // Close window and OpenGL context
 
-    try bw.flush(); // Don't forget to flush!
+    rl.setTargetFPS(60); // Set our game to run at 60 frames-per-second
+    //--------------------------------------------------------------------------------------
+
+    // Main game loop
+    while (!rl.windowShouldClose()) { // Detect window close button or ESC key
+        // Update
+        //----------------------------------------------------------------------------------
+        // TODO: Update your variables here
+        //----------------------------------------------------------------------------------
+
+        // Draw
+        //----------------------------------------------------------------------------------
+        rl.beginDrawing();
+        defer rl.endDrawing();
+
+        rl.clearBackground(rl.Color.white);
+
+        rl.drawText("Congrats! You created your first window!", 190, 200, 20, rl.Color.light_gray);
+        //----------------------------------------------------------------------------------
+    }
 }
-
-test "simple test" {
-    var list = std.ArrayList(i32).init(std.testing.allocator);
-    defer list.deinit(); // Try commenting this out and see if zig detects the memory leak!
-    try list.append(42);
-    try std.testing.expectEqual(@as(i32, 42), list.pop());
-}
-
-test "use other module" {
-    try std.testing.expectEqual(@as(i32, 150), lib.add(100, 50));
-}
-
-test "fuzz example" {
-    const global = struct {
-        fn testOne(input: []const u8) anyerror!void {
-            // Try passing `--fuzz` to `zig build test` and see if it manages to fail this test case!
-            try std.testing.expect(!std.mem.eql(u8, "canyoufindme", input));
-        }
-    };
-    try std.testing.fuzz(global.testOne, .{});
-}
-
-const std = @import("std");
-
-/// This imports the separate module containing `root.zig`. Take a look in `build.zig` for details.
-const lib = @import("zig-sweeper_lib");
