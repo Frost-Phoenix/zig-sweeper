@@ -8,9 +8,16 @@
 
 ### art
 
+- [ ] timer
+- [ ] bomb count
+- [ ] scallable window
 - [ ] colored at runtime
 - [ ] support user made pallet
 - [ ] custom art ?
+
+### sound
+
+- [ ] sfx
 
 ### other
 
