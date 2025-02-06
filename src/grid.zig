@@ -4,7 +4,8 @@ const Allocator = std.mem.Allocator;
 const rl = @import("raylib");
 
 const cell = @import("cell.zig");
-const CELL_SIZE = cell.CELL_SIZE;
+const common = @import("common.zig");
+const CELL_SIZE = common.CELL_SIZE;
 
 const dirs = [_][2]i32{
     .{ 1, 1 },
@@ -23,6 +24,8 @@ pub const Grid = struct {
     nb_rows: u32,
     nb_cols: u32,
 
+    last_pressed_cell: ?u32 = null,
+
     pub fn init(allocator: Allocator, nb_rows: u32, nb_cols: u32) !Grid {
         var grid: Grid = .{
             .nb_rows = nb_rows,
@@ -32,9 +35,11 @@ pub const Grid = struct {
 
         for (0..nb_rows) |row| {
             for (0..nb_cols) |col| {
-                grid.grid[getIndex(&grid, @intCast(row), @intCast(col))] = .{
-                    .state = cell.CellState.open,
-                    .type = cell.CellType.empty,
+                const idx = getIndex(&grid, @intCast(row), @intCast(col));
+                grid.grid[idx] = .{
+                    .state = .closed,
+                    // .state = .open,
+                    .type = .empty,
                     .number = 3,
                     .row = @intCast(row),
                     .col = @intCast(col),
@@ -60,7 +65,11 @@ pub const Grid = struct {
 
             const idx = getIndex(self, row, col);
 
-            self.grid[idx].type = cell.CellType.bomb;
+            if (self.grid[idx].type == .bomb) {
+                continue;
+            }
+
+            self.grid[idx].type = .bomb;
 
             for (dirs) |dir| {
                 const offset_row = @as(i32, @intCast(row)) + dir[0];
@@ -75,7 +84,7 @@ pub const Grid = struct {
                 switch (c.type) {
                     .bomb => continue,
                     .empty => {
-                        c.type = cell.CellType.number;
+                        c.type = .number;
                         c.number = 1;
                     },
                     .number => c.number.? += 1,
@@ -93,6 +102,54 @@ pub const Grid = struct {
 
     pub fn getIndex(self: *Grid, row: u32, col: u32) u32 {
         return self.nb_cols * row + col;
+    }
+
+    pub fn getIndexPixel(self: *Grid, pos: rl.Vector2) u32 {
+        const row = @as(u32, @intFromFloat(pos.y / CELL_SIZE));
+        const col = @as(u32, @intFromFloat(pos.x / CELL_SIZE));
+        return self.nb_cols * row + col;
+    }
+
+    pub fn pressCell(self: *Grid, pos: rl.Vector2) void {
+        const idx = self.getIndexPixel(pos);
+
+        if (self.last_pressed_cell != null and idx != self.last_pressed_cell.?) {
+            self.grid[self.last_pressed_cell.?].state = .closed;
+        }
+
+        if (self.grid[idx].state == .closed) {
+            self.grid[idx].state = .pressed;
+            self.last_pressed_cell = idx;
+        }
+    }
+
+    pub fn closePressedCells(self: *Grid) void {
+        if (self.last_pressed_cell) |c| {
+            self.grid[c].state = .closed;
+        }
+        self.last_pressed_cell = null;
+    }
+
+    pub fn flagCell(self: *Grid, pos: rl.Vector2) void {
+        const idx = self.getIndexPixel(pos);
+        const c = &self.grid[idx];
+
+        c.state = switch (c.state) {
+            .flaged => .closed,
+            .closed => .flaged,
+            else => c.state,
+        };
+    }
+
+    pub fn openCell(self: *Grid, pos: rl.Vector2) void {
+        const idx = self.getIndexPixel(pos);
+        const c = &self.grid[idx];
+
+        if (c.state == .flaged) {
+            return;
+        }
+
+        self.grid[idx].state = .open;
     }
 
     pub fn render(self: *Grid, cells_texture: rl.Texture2D) void {

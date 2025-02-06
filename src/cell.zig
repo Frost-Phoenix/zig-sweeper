@@ -1,5 +1,3 @@
-pub const CELL_SIZE = 16;
-
 pub const CellState = enum {
     open,
     closed,
