@@ -3,8 +3,9 @@
 - [ ] game loop (win / lose / restart game)
 - [ ] dificulty selection
 - [ ] custom map
-- [ ] open adjacent cell when nb flags
+- [x] open adjacent cell when nb flags
 - [ ] no guessing mode
+- [ ] auto open emty cells
 
 ### art
 
@@ -21,9 +22,9 @@
 
 ### fix
 
-- [ ] fix generation
 - [x] fix camera bounds
 
 ### other
 
 - [ ] flake
+- [ ] implement a solver
