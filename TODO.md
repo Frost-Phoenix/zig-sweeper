@@ -19,6 +19,11 @@
 
 - [ ] sfx
 
+### fix
+
+- [ ] fix generation
+- [x] fix camera bounds
+
 ### other
 
 - [ ] flake
