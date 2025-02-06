@@ -19,6 +19,6 @@ pub fn main() !void {
 
     while (!rl.windowShouldClose()) {
         game.update();
-        game.render();
+        try game.render();
     }
 }

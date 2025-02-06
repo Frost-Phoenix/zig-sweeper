@@ -18,13 +18,13 @@ const dirs = [_][2]i32{
     .{ 1, 0 },
 };
 
+var last_pressed_cells: [8]?usize = .{null} ** 8;
+
 pub const Grid = struct {
     grid: []cell.Cell,
 
     nb_rows: u32,
     nb_cols: u32,
-
-    last_pressed_cell: ?u32 = null,
 
     pub fn init(allocator: Allocator, nb_rows: u32, nb_cols: u32) !Grid {
         var grid: Grid = .{
@@ -38,9 +38,8 @@ pub const Grid = struct {
                 const idx = getIndex(&grid, @intCast(row), @intCast(col));
                 grid.grid[idx] = .{
                     .state = .closed,
-                    // .state = .open,
                     .type = .empty,
-                    .number = 3,
+                    .number = null,
                     .row = @intCast(row),
                     .col = @intCast(col),
                 };
@@ -75,7 +74,7 @@ pub const Grid = struct {
                 const offset_row = @as(i32, @intCast(row)) + dir[0];
                 const offset_col = @as(i32, @intCast(col)) + dir[1];
 
-                if (offset_col < 0 or offset_row < 0 or offset_col >= self.nb_cols or offset_row >= self.nb_rows) {
+                if (!self.isPosInBounds(offset_row, offset_col)) {
                     continue;
                 }
 
@@ -100,34 +99,68 @@ pub const Grid = struct {
         allocator.free(self.grid);
     }
 
-    pub fn getIndex(self: *Grid, row: u32, col: u32) u32 {
+    pub fn getIndex(self: *Grid, row: u32, col: u32) usize {
         return self.nb_cols * row + col;
     }
 
-    pub fn getIndexPixel(self: *Grid, pos: rl.Vector2) u32 {
+    pub fn getIndexPixel(self: *Grid, pos: rl.Vector2) usize {
         const row = @as(u32, @intFromFloat(pos.y / CELL_SIZE));
         const col = @as(u32, @intFromFloat(pos.x / CELL_SIZE));
         return self.nb_cols * row + col;
     }
 
+    fn getPosFromIndex(self: *Grid, idx: usize) rl.Vector2 {
+        const col = idx % self.nb_cols;
+        const row = (idx - col) / self.nb_rows;
+
+        return rl.Vector2{
+            .x = @as(f32, @floatFromInt(col)),
+            .y = @as(f32, @floatFromInt(row)),
+        };
+    }
+
+    fn isPosInBounds(self: *Grid, row: i32, col: i32) bool {
+        return !(col < 0 or row < 0 or col >= self.nb_cols or row >= self.nb_rows);
+    }
+
     pub fn pressCell(self: *Grid, pos: rl.Vector2) void {
+        self.closePressedCells();
+
         const idx = self.getIndexPixel(pos);
+        const c = &self.grid[idx];
 
-        if (self.last_pressed_cell != null and idx != self.last_pressed_cell.?) {
-            self.grid[self.last_pressed_cell.?].state = .closed;
-        }
+        if (c.state == .closed) {
+            c.state = .pressed;
+            last_pressed_cells[0] = idx;
+        } else if (c.state == .open and c.type == .number) {
+            const cords = self.getPosFromIndex(idx);
+            const row = @as(i32, @intFromFloat(cords.y));
+            const col = @as(i32, @intFromFloat(cords.x));
 
-        if (self.grid[idx].state == .closed) {
-            self.grid[idx].state = .pressed;
-            self.last_pressed_cell = idx;
+            for (dirs, 0..) |dir, i| {
+                const offset_row = row + dir[0];
+                const offset_col = col + dir[1];
+
+                if (!self.isPosInBounds(offset_row, offset_col)) {
+                    continue;
+                }
+
+                const offset_idx = self.getIndex(@as(u32, @intCast(offset_row)), @as(u32, @intCast(offset_col)));
+                var offset_cell = &self.grid[offset_idx];
+
+                if (offset_cell.state != .closed) continue;
+                offset_cell.state = .pressed;
+                last_pressed_cells[i] = offset_idx;
+            }
         }
     }
 
     pub fn closePressedCells(self: *Grid) void {
-        if (self.last_pressed_cell) |c| {
-            self.grid[c].state = .closed;
+        for (last_pressed_cells) |last_cell| {
+            if (last_cell == null) continue;
+            self.grid[last_cell.?].state = .closed;
         }
-        self.last_pressed_cell = null;
+        last_pressed_cells = .{null} ** last_pressed_cells.len;
     }
 
     pub fn flagCell(self: *Grid, pos: rl.Vector2) void {
@@ -141,15 +174,60 @@ pub const Grid = struct {
         };
     }
 
+    fn getNbAdjacentFlags(self: *Grid, row: i32, col: i32) u32 {
+        var nb_flags: u32 = 0;
+
+        for (dirs) |dir| {
+            const offset_row = row + dir[0];
+            const offset_col = col + dir[1];
+
+            if (!self.isPosInBounds(offset_row, offset_col)) {
+                continue;
+            }
+
+            const offset_idx = self.getIndex(@as(u32, @intCast(offset_row)), @as(u32, @intCast(offset_col)));
+            const offset_cell = &self.grid[offset_idx];
+
+            if (offset_cell.state == .flaged) {
+                nb_flags += 1;
+            }
+        }
+
+        return nb_flags;
+    }
+
     pub fn openCell(self: *Grid, pos: rl.Vector2) void {
         const idx = self.getIndexPixel(pos);
         const c = &self.grid[idx];
 
-        if (c.state == .flaged) {
-            return;
+        if (c.state == .closed) {
+            c.state = .open;
         }
+        if (c.type != .number) return;
 
-        self.grid[idx].state = .open;
+        const cords = self.getPosFromIndex(idx);
+        const row = @as(i32, @intFromFloat(cords.y));
+        const col = @as(i32, @intFromFloat(cords.x));
+
+        const nb_flaged = self.getNbAdjacentFlags(row, col);
+
+        if (nb_flaged != c.number.?) return;
+
+        for (dirs) |dir| {
+            const offset_row = row + dir[0];
+            const offset_col = col + dir[1];
+
+            if (!self.isPosInBounds(offset_row, offset_col)) {
+                continue;
+            }
+
+            const offset_idx = self.getIndex(@as(u32, @intCast(offset_row)), @as(u32, @intCast(offset_col)));
+            var offset_cell = &self.grid[offset_idx];
+
+            if (offset_cell.state == .closed) {
+                offset_cell.state = .open;
+            }
+        }
     }
 
     pub fn render(self: *Grid, cells_texture: rl.Texture2D) void {
