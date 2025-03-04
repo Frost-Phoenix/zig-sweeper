@@ -15,6 +15,7 @@
 - [ ] colored at runtime
 - [ ] support user made pallet
 - [ ] custom art ?
+- [ ] empty cell opening animation
 
 ### sound
 
