@@ -1,14 +1,113 @@
 const std = @import("std");
-const printD = std.debug.print;
+const print = std.debug.print;
 
 const rl = @import("raylib");
 const Color = rl.Color;
 
+pub fn Queue(comptime T: type) type {
+    return struct {
+        const This = @This();
+
+        const QueueError = error{
+            QueueEmpty,
+        };
+
+        const Node = struct {
+            data: T,
+            next: ?*Node,
+        };
+
+        gpa: std.mem.Allocator,
+        start: ?*Node,
+        end: ?*Node,
+
+        pub fn init(allocator: std.mem.Allocator) This {
+            return This{
+                .gpa = allocator,
+                .start = null,
+                .end = null,
+            };
+        }
+
+        pub fn deinit(self: *This) void {
+            var node = self.start;
+
+            while (node != null) {
+                const tmp = node.?;
+                node = node.?.next;
+                self.gpa.destroy(tmp);
+            }
+        }
+
+        pub fn enqueue(self: *This, val: T) !void {
+            const node = try self.gpa.create(Node);
+            node.* = .{
+                .data = val,
+                .next = null,
+            };
+
+            if (self.end) |end| {
+                end.next = node;
+            } else {
+                self.start = node;
+            }
+
+            self.end = node;
+        }
+
+        pub fn dequeue(self: *This) QueueError!T {
+            if (self.isEmpty()) {
+                return QueueError.QueueEmpty;
+            }
+
+            const head = self.start.?;
+            defer self.gpa.destroy(head);
+
+            if (head.next) |next| {
+                self.start = next;
+            } else {
+                self.start = null;
+                self.end = null;
+            }
+
+            return head.data;
+        }
+
+        pub fn isEmpty(self: *This) bool {
+            return self.start == null;
+        }
+    };
+}
+
 const FPS = 60;
 const CELL_SIZE = 16;
 
+const DIRS = [_][2]i32{
+    .{ 1, 1 },
+    .{ 0, 1 },
+    .{ -1, 1 },
+    .{ -1, 0 },
+    .{ -1, -1 },
+    .{ 0, -1 },
+    .{ 1, -1 },
+    .{ 1, 0 },
+};
+
 var screen_width: i32 = undefined;
 var screen_height: i32 = undefined;
+
+var game_state: GameState = undefined;
+
+const GameState = enum {
+    playing,
+    win,
+    lost,
+};
+
+const Pos = struct {
+    row: usize,
+    col: usize,
+};
 
 const Cell = packed struct(u8) {
     is_closed: bool,
@@ -24,17 +123,21 @@ const Grid = struct {
     nb_cols: usize,
     nb_bombs: i32,
 
+    allocator: std.mem.Allocator,
+
     pub fn init(allocator: std.mem.Allocator, nb_rows: usize, nb_cols: usize, nb_bombs: i32) @This() {
         var grid: Grid = Grid{
             .cells = allocator.alloc(Cell, nb_rows * nb_cols) catch unreachable,
             .nb_rows = nb_rows,
             .nb_cols = nb_cols,
             .nb_bombs = nb_bombs,
+
+            .allocator = allocator,
         };
 
         for (0..nb_rows * nb_cols) |idx| {
             grid.cells[idx] = Cell{
-                .is_closed = false,
+                .is_closed = true,
                 .is_flagged = false,
                 .is_pressed = false,
                 .is_bomb = false,
@@ -65,63 +168,131 @@ const Grid = struct {
         var nb_bomb_planted: i32 = 0;
 
         while (nb_bomb_planted < self.nb_bombs) {
-            const row = rand.intRangeLessThan(usize, 0, self.nb_rows);
-            const col = rand.intRangeLessThan(usize, 0, self.nb_cols);
+            const pos = Pos{
+                .row = rand.intRangeLessThan(usize, 0, self.nb_rows),
+                .col = rand.intRangeLessThan(usize, 0, self.nb_cols),
+            };
 
-            const cell = self.getCell(row, col);
+            const cell = self.getCell(pos);
 
-            if (cell.is_bomb) {
-                continue;
-            }
+            if (cell.is_bomb) continue;
 
             cell.is_bomb = true;
 
-            self.incrementNeighbourCells(row, col);
+            self.incrementNeighbourCells(pos);
 
             nb_bomb_planted += 1;
         }
     }
 
-    pub fn isInBound(self: *Grid, row: i32, col: i32) bool {
+    fn isInBound(self: *Grid, row: i32, col: i32) bool {
         return 0 <= row and row < self.nb_rows and 0 <= col and col < self.nb_cols;
     }
 
-    fn incrementNeighbourCells(self: *Grid, bomb_row: usize, bomb_col: usize) void {
-        const dirs = [_][2]i32{
-            .{ 1, 1 },
-            .{ 0, 1 },
-            .{ -1, 1 },
-            .{ -1, 0 },
-            .{ -1, -1 },
-            .{ 0, -1 },
-            .{ 1, -1 },
-            .{ 1, 0 },
-        };
-
-        for (dirs) |dir| {
-            const row = @as(i32, @intCast(bomb_row)) + dir[0];
-            const col = @as(i32, @intCast(bomb_col)) + dir[1];
+    fn incrementNeighbourCells(self: *Grid, bomb_pos: Pos) void {
+        for (DIRS) |dir| {
+            const row = @as(i32, @intCast(bomb_pos.row)) + dir[0];
+            const col = @as(i32, @intCast(bomb_pos.col)) + dir[1];
 
             if (!self.isInBound(row, col)) continue;
 
-            const cell = self.getCell(
-                @as(usize, @intCast(row)),
-                @as(usize, @intCast(col)),
-            );
+            const cell = self.getCell(.{
+                .row = @as(usize, @intCast(row)),
+                .col = @as(usize, @intCast(col)),
+            });
 
             cell.number += 1;
         }
     }
 
-    fn getIdx(self: *Grid, row: usize, col: usize) usize {
+    fn getIdx(self: *Grid, pos: Pos) usize {
         // assert: test if pos in bound
-        return self.nb_cols * row + col;
+        return self.nb_cols * pos.row + pos.col;
     }
 
-    pub fn getCell(self: *Grid, row: usize, col: usize) *Cell {
-        const idx = self.getIdx(row, col);
+    pub fn getCell(self: *Grid, pos: Pos) *Cell {
+        const idx = self.getIdx(pos);
 
         return &self.cells[idx];
+    }
+
+    fn openConnectedEmptyCell(self: *Grid, start_pos: Pos) !void {
+        var queue = Queue(Pos).init(self.allocator);
+        defer queue.deinit();
+
+        try queue.enqueue(start_pos);
+
+        while (!queue.isEmpty()) {
+            const pos = try queue.dequeue();
+
+            for (DIRS) |dir| {
+                const row = @as(i32, @intCast(pos.row)) + dir[0];
+                const col = @as(i32, @intCast(pos.col)) + dir[1];
+
+                if (!self.isInBound(row, col)) continue;
+
+                const offset_pos = Pos{
+                    .row = @as(usize, @intCast(row)),
+                    .col = @as(usize, @intCast(col)),
+                };
+
+                const cell = self.getCell(offset_pos);
+
+                if (!cell.is_closed or cell.is_flagged) continue;
+
+                cell.is_closed = false;
+
+                if (cell.number != 0) continue;
+
+                try queue.enqueue(offset_pos);
+            }
+        }
+    }
+
+    pub fn openCell(self: *Grid, pos: Pos) !void {
+        const cell = self.getCell(pos);
+
+        if (cell.is_flagged or !cell.is_closed) {
+            return;
+        }
+
+        cell.is_closed = false;
+
+        if (cell.is_bomb) {
+            game_state = .lost;
+            return;
+        } else if (cell.number == 0) {
+            try self.openConnectedEmptyCell(pos);
+        }
+    }
+
+    pub fn flaggCell(self: *Grid, pos: Pos) void {
+        const cell = self.getCell(pos);
+
+        if (!cell.is_closed) {
+            return;
+        }
+
+        cell.is_flagged = !cell.is_flagged;
+    }
+
+    pub fn pressCell(self: *Grid, pos: Pos) void {
+        _ = self; // autofix
+        _ = pos; // autofix
+    }
+
+    pub fn reset(self: *Grid) void {
+        for (0..self.nb_rows * self.nb_cols) |idx| {
+            const cell = &self.cells[idx];
+
+            cell.is_closed = true;
+            cell.is_flagged = false;
+            cell.is_pressed = false;
+            cell.is_bomb = false;
+            cell.number = 0;
+        }
+
+        self.plantBombs();
     }
 };
 
@@ -133,6 +304,8 @@ pub fn main() !void {
     const nb_rows: usize = 16;
     const nb_cols: usize = 30;
     const nb_bombs = 99;
+
+    game_state = .playing;
 
     screen_width = @as(i32, @intCast(nb_cols)) * CELL_SIZE;
     screen_height = @as(i32, @intCast(nb_rows)) * CELL_SIZE;
@@ -149,12 +322,48 @@ pub fn main() !void {
     defer grid.deinit(allocator);
 
     while (!rl.windowShouldClose()) {
+        // Update
+        try update(&grid);
+
+        // Render
         rl.beginDrawing();
         defer rl.endDrawing();
 
         rl.clearBackground(Color.gray);
 
         renderGrid(&grid, cell_texture);
+
+        if (game_state == .playing) continue;
+
+        const rect = rl.Rectangle.init(
+            @as(f32, @floatFromInt(@divFloor(screen_width, 2) - 100)),
+            @as(f32, @floatFromInt(@divFloor(screen_height, 2) - 30)),
+            200,
+            60,
+        );
+        rl.drawRectangleRec(rect, Color.black);
+
+        const txt = switch (game_state) {
+            .lost => "You lose",
+            .win => "You win !",
+            else => unreachable,
+        };
+
+        rl.drawText(
+            txt,
+            @divFloor(screen_width, 2) - 43,
+            @divFloor(screen_height, 2) - 15,
+            20,
+            Color.white,
+        );
+
+        rl.drawText(
+            "<R> to replay",
+            @divFloor(screen_width, 2) - 33,
+            @divFloor(screen_height, 2) + 10,
+            10,
+            Color.white,
+        );
     }
 }
 
@@ -175,7 +384,7 @@ fn renderGrid(grid: *Grid, cell_texture: rl.Texture2D) void {
             const x = @as(f32, @floatFromInt(col * CELL_SIZE));
             const y = @as(f32, @floatFromInt(row * CELL_SIZE));
 
-            const cell = grid.getCell(row, col);
+            const cell = grid.getCell(.{ .row = row, .col = col });
 
             const offset_idx = getCellTextureOffset(cell);
             const offset_px = @as(f32, @floatFromInt(offset_idx * CELL_SIZE));
@@ -185,5 +394,38 @@ fn renderGrid(grid: *Grid, cell_texture: rl.Texture2D) void {
 
             rl.drawTextureRec(cell_texture, src, dest, Color.white);
         }
+    }
+}
+
+fn update(grid: *Grid) !void {
+    if (game_state == .playing) {
+        try updateMouse(grid);
+    } else {
+        updateKeyboard(grid);
+    }
+}
+
+fn getPosFromMousePos(mouse_pos: rl.Vector2) Pos {
+    return Pos{
+        .row = @divFloor(@as(usize, @intFromFloat(mouse_pos.y)), CELL_SIZE),
+        .col = @divFloor(@as(usize, @intFromFloat(mouse_pos.x)), CELL_SIZE),
+    };
+}
+
+fn updateMouse(grid: *Grid) !void {
+    const mouse_pos = rl.getMousePosition();
+    const pos = getPosFromMousePos(mouse_pos);
+
+    if (rl.isMouseButtonReleased(.left)) {
+        try grid.openCell(pos);
+    } else if (rl.isMouseButtonReleased(.right)) {
+        grid.flaggCell(pos);
+    }
+}
+
+fn updateKeyboard(grid: *Grid) void {
+    if (rl.isKeyPressed(.r)) {
+        game_state = .playing;
+        grid.reset();
     }
 }
