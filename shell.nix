@@ -4,6 +4,7 @@ pkgs.mkShell {
   buildInputs = with pkgs; [
     glfw-wayland
     zig
+    zls
   ];
 
   nativeBuildInputs = [
