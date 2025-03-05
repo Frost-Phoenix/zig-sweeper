@@ -123,6 +123,7 @@ const Grid = struct {
     nb_cols: usize,
     nb_bombs: i32,
     nb_open_cells: i32,
+    pressed_cells: [8]?*Cell,
 
     allocator: std.mem.Allocator,
 
@@ -133,21 +134,12 @@ const Grid = struct {
             .nb_cols = nb_cols,
             .nb_bombs = nb_bombs,
             .nb_open_cells = 0,
+            .pressed_cells = undefined,
 
             .allocator = allocator,
         };
 
-        for (0..nb_rows * nb_cols) |idx| {
-            grid.cells[idx] = Cell{
-                .is_closed = true,
-                .is_flagged = false,
-                .is_pressed = false,
-                .is_bomb = false,
-                .number = 0,
-            };
-        }
-
-        grid.plantBombs();
+        grid.reset();
 
         return grid;
     }
@@ -252,21 +244,65 @@ const Grid = struct {
         }
     }
 
+    fn getNbConnectedFlags(self: *Grid, pos: Pos) i32 {
+        var nb_flags: i32 = 0;
+
+        for (DIRS) |dir| {
+            const row = @as(i32, @intCast(pos.row)) + dir[0];
+            const col = @as(i32, @intCast(pos.col)) + dir[1];
+
+            if (!self.isInBound(row, col)) continue;
+
+            const offset_cell = self.getCell(.{
+                .row = @as(usize, @intCast(row)),
+                .col = @as(usize, @intCast(col)),
+            });
+
+            if (offset_cell.is_flagged) {
+                nb_flags += 1;
+            }
+        }
+
+        return nb_flags;
+    }
+
     pub fn openCell(self: *Grid, pos: Pos) !void {
         const cell = self.getCell(pos);
 
-        if (cell.is_flagged or !cell.is_closed) {
-            return;
-        }
+        if (cell.is_flagged) return;
 
-        cell.is_closed = false;
-        self.nb_open_cells += 1;
+        if (cell.is_closed) {
+            cell.is_closed = false;
+            self.nb_open_cells += 1;
 
-        if (cell.is_bomb) {
-            game_state = .lost;
-            return;
-        } else if (cell.number == 0) {
-            try self.openConnectedEmptyCell(pos);
+            if (cell.is_bomb) {
+                game_state = .lost;
+                return;
+            } else if (cell.number == 0) {
+                try self.openConnectedEmptyCell(pos);
+            }
+        } else if (cell.number != 0) {
+            const nb_flags = self.getNbConnectedFlags(pos);
+
+            if (nb_flags == cell.number) {
+                for (DIRS) |dir| {
+                    const row = @as(i32, @intCast(pos.row)) + dir[0];
+                    const col = @as(i32, @intCast(pos.col)) + dir[1];
+
+                    if (!self.isInBound(row, col)) continue;
+
+                    const offset_pos = .{
+                        .row = @as(usize, @intCast(row)),
+                        .col = @as(usize, @intCast(col)),
+                    };
+
+                    const offset_cell = self.getCell(offset_pos);
+
+                    if (offset_cell.is_flagged or !offset_cell.is_closed) continue;
+
+                    try self.openCell(offset_pos);
+                }
+            }
         }
 
         if (self.nb_open_cells == self.nb_cols * self.nb_rows - @as(usize, @intCast(self.nb_bombs))) {
@@ -285,21 +321,67 @@ const Grid = struct {
     }
 
     pub fn pressCell(self: *Grid, pos: Pos) void {
-        _ = self; // autofix
-        _ = pos; // autofix
+        self.unpressAll();
+
+        const cell = self.getCell(pos);
+
+        if (cell.is_flagged) return;
+
+        if (cell.is_closed) {
+            cell.is_pressed = true;
+            self.pressed_cells[0] = cell;
+            self.pressed_cells[1] = null;
+
+            return;
+        }
+
+        var i: usize = 0;
+        for (DIRS) |dir| {
+            const row = @as(i32, @intCast(pos.row)) + dir[0];
+            const col = @as(i32, @intCast(pos.col)) + dir[1];
+
+            if (!self.isInBound(row, col)) continue;
+
+            const offset_cell = self.getCell(.{
+                .row = @as(usize, @intCast(row)),
+                .col = @as(usize, @intCast(col)),
+            });
+
+            if (offset_cell.is_flagged or !offset_cell.is_closed) continue;
+
+            offset_cell.is_pressed = true;
+            self.pressed_cells[i] = offset_cell;
+
+            i += 1;
+        }
+
+        if (i < self.pressed_cells.len) {
+            self.pressed_cells[i] = null;
+        }
+    }
+
+    pub fn unpressAll(self: *Grid) void {
+        for (self.pressed_cells) |cell| {
+            if (cell) |c| {
+                c.is_pressed = false;
+            } else {
+                break;
+            }
+        }
     }
 
     pub fn reset(self: *Grid) void {
         self.nb_open_cells = 0;
+        self.pressed_cells[0] = null;
 
         for (0..self.nb_rows * self.nb_cols) |idx| {
-            const cell = &self.cells[idx];
-
-            cell.is_closed = true;
-            cell.is_flagged = false;
-            cell.is_pressed = false;
-            cell.is_bomb = false;
-            cell.number = 0;
+            self.cells[idx] = Cell{
+                .is_closed = true,
+                .is_flagged = false,
+                .is_pressed = false,
+                .is_bomb = false,
+                .number = 0,
+            };
         }
 
         self.plantBombs();
@@ -422,14 +504,30 @@ fn getPosFromMousePos(mouse_pos: rl.Vector2) Pos {
     };
 }
 
+fn mouseInsideWindow(mouse_pos: rl.Vector2) bool {
+    const x = @as(i32, @intFromFloat(mouse_pos.x));
+    const y = @as(i32, @intFromFloat(mouse_pos.y));
+
+    return 0 <= x and x < screen_width and 0 <= y and y < screen_height;
+}
+
 fn updateMouse(grid: *Grid) !void {
     const mouse_pos = rl.getMousePosition();
+
+    if (!mouseInsideWindow(mouse_pos)) {
+        grid.unpressAll();
+        return;
+    }
+
     const pos = getPosFromMousePos(mouse_pos);
 
-    if (rl.isMouseButtonReleased(.left)) {
-        try grid.openCell(pos);
-    } else if (rl.isMouseButtonReleased(.right)) {
+    if (rl.isMouseButtonPressed(.right)) {
         grid.flaggCell(pos);
+    } else if (rl.isMouseButtonReleased(.left)) {
+        grid.unpressAll();
+        try grid.openCell(pos);
+    } else if (rl.isMouseButtonDown(.left)) {
+        grid.pressCell(pos);
     }
 }
 
