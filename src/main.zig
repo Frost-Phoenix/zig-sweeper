@@ -122,6 +122,7 @@ const Grid = struct {
     nb_rows: usize,
     nb_cols: usize,
     nb_bombs: i32,
+    nb_open_cells: i32,
 
     allocator: std.mem.Allocator,
 
@@ -131,6 +132,7 @@ const Grid = struct {
             .nb_rows = nb_rows,
             .nb_cols = nb_cols,
             .nb_bombs = nb_bombs,
+            .nb_open_cells = 0,
 
             .allocator = allocator,
         };
@@ -241,6 +243,7 @@ const Grid = struct {
                 if (!cell.is_closed or cell.is_flagged) continue;
 
                 cell.is_closed = false;
+                self.nb_open_cells += 1;
 
                 if (cell.number != 0) continue;
 
@@ -257,12 +260,17 @@ const Grid = struct {
         }
 
         cell.is_closed = false;
+        self.nb_open_cells += 1;
 
         if (cell.is_bomb) {
             game_state = .lost;
             return;
         } else if (cell.number == 0) {
             try self.openConnectedEmptyCell(pos);
+        }
+
+        if (self.nb_open_cells == self.nb_cols * self.nb_rows - @as(usize, @intCast(self.nb_bombs))) {
+            game_state = .win;
         }
     }
 
@@ -282,6 +290,8 @@ const Grid = struct {
     }
 
     pub fn reset(self: *Grid) void {
+        self.nb_open_cells = 0;
+
         for (0..self.nb_rows * self.nb_cols) |idx| {
             const cell = &self.cells[idx];
 
@@ -303,7 +313,7 @@ pub fn main() !void {
 
     const nb_rows: usize = 16;
     const nb_cols: usize = 30;
-    const nb_bombs = 99;
+    const nb_bombs = 25;
 
     game_state = .playing;
 
@@ -400,9 +410,9 @@ fn renderGrid(grid: *Grid, cell_texture: rl.Texture2D) void {
 fn update(grid: *Grid) !void {
     if (game_state == .playing) {
         try updateMouse(grid);
-    } else {
-        updateKeyboard(grid);
     }
+
+    updateKeyboard(grid);
 }
 
 fn getPosFromMousePos(mouse_pos: rl.Vector2) Pos {
