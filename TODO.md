@@ -1,11 +1,12 @@
 ### gameplay
 
-- [ ] game loop (win / lose / restart game)
+- [x] game loop (win / lose / restart game)
 - [ ] dificulty selection
 - [ ] custom map
 - [x] open adjacent cell when nb flags
 - [ ] no guessing mode
-- [ ] auto open emty cells
+- [x] auto open emty cells
+- [ ] re-implement camera with wheel zoom / window scale
 
 ### art
 
@@ -20,10 +21,6 @@
 ### sound
 
 - [ ] sfx
-
-### fix
-
-- [x] fix camera bounds
 
 ### other
 
