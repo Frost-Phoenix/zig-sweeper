@@ -6,5 +6,7 @@ zig-out/
 /build-*/
 /docgen_tmp/
 
+result
+
 .vscode
 tmp
