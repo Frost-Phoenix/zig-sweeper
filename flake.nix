@@ -6,6 +6,7 @@
     zls.url = "github:zigtools/zls?ref=0.13.0";
 
     treefmt-nix.url = "github:numtide/treefmt-nix";
+    zigimports.url = "github:frost-phoenix/zigimports";
   };
 
   outputs =
@@ -13,6 +14,7 @@
       zig2nix,
       zls,
       treefmt-nix,
+      zigimports,
       ...
     }:
     let
@@ -58,6 +60,7 @@
         ];
 
         treefmtEval = treefmt-nix.lib.evalModule env.pkgs ./treefmt.nix;
+        zigimportsPkg = zigimports.outputs.packages.${system}.default;
       in
       with builtins;
       with env.lib;
@@ -96,7 +99,10 @@
         # nix develop
         devShells.default = env.mkShell {
           buildInputs = buildInputs;
-          nativeBuildInputs = [ zlsPkg ] ++ nativeBuildInputs;
+          nativeBuildInputs = [
+            zlsPkg
+            zigimportsPkg
+          ] ++ nativeBuildInputs;
 
           LD_LIBRARY_PATH = env.pkgs.lib.makeLibraryPath (with env.pkgs; [ wayland ]);
         };
