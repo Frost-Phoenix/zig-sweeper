@@ -4,12 +4,15 @@
   inputs = {
     zig2nix.url = "github:Cloudef/zig2nix";
     zls.url = "github:zigtools/zls?ref=0.13.0";
+
+    treefmt-nix.url = "github:numtide/treefmt-nix";
   };
 
   outputs =
     {
       zig2nix,
       zls,
+      treefmt-nix,
       ...
     }:
     let
@@ -53,6 +56,8 @@
           # Wayland
           wayland.dev
         ];
+
+        treefmtEval = treefmt-nix.lib.evalModule env.pkgs ./treefmt.nix;
       in
       with builtins;
       with env.lib;
@@ -85,6 +90,8 @@
 
         # nix run .#zon2json-lock
         apps.zon2json-lock = env.app [ env.zon2json-lock ] "zon2json-lock \"$@\"";
+
+        formatter = treefmtEval.config.build.wrapper;
 
         # nix develop
         devShells.default = env.mkShell {
