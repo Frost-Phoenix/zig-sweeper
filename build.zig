@@ -1,6 +1,17 @@
 const std = @import("std");
 const rlz = @import("raylib-zig");
 
+fn addAssets(b: *std.Build, exe: *std.Build.Step.Compile) void {
+    const assets = [_]struct { []const u8, []const u8 }{
+        .{ "res/cells.png", "cells_png" },
+    };
+
+    for (assets) |asset| {
+        const path, const name = asset;
+        exe.root_module.addAnonymousImport(name, .{ .root_source_file = b.path(path) });
+    }
+}
+
 pub fn build(b: *std.Build) !void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
@@ -36,6 +47,7 @@ pub fn build(b: *std.Build) !void {
 
     const exe = b.addExecutable(.{ .name = "zig-sweeper", .root_source_file = b.path("src/main.zig"), .optimize = optimize, .target = target });
 
+    addAssets(b, exe);
     exe.linkLibrary(raylib_artifact);
     exe.root_module.addImport("raylib", raylib);
 

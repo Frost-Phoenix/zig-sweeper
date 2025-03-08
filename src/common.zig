@@ -1,5 +1,7 @@
 const Allocator = @import("std").mem.Allocator;
 
+const rl = @import("raylib");
+
 // ***** //
 
 pub const CELL_SIZE = 16;
@@ -77,4 +79,11 @@ pub fn Queue(comptime T: type) type {
             return self.start == null;
         }
     };
+}
+
+pub fn loadTexture(comptime texture_name: []const u8) !rl.Texture2D {
+    const texture_data = @embedFile(texture_name);
+    const image = try rl.loadImageFromMemory(".png", texture_data);
+
+    return try rl.loadTextureFromImage(image);
 }

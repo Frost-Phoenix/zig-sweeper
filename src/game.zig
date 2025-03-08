@@ -8,6 +8,7 @@ const Pos = @import("grid.zig").Pos;
 const Cell = @import("grid.zig").Cell;
 const Grid = @import("grid.zig").Grid;
 
+const loadTexture = @import("common.zig").loadTexture;
 const CELL_SIZE = @import("common.zig").CELL_SIZE;
 
 // ***** //
@@ -32,7 +33,7 @@ pub fn init(allocator: Allocator, nb_rows: usize, nb_cols: usize, nb_bombs: i32)
     grid = Grid.init(allocator, nb_rows, nb_cols, nb_bombs);
 
     initWindow(nb_rows, nb_cols);
-    cell_texture = try rl.loadTexture("res/cells.png");
+    cell_texture = try loadTexture("cells_png");
 }
 
 fn initWindow(nb_rows: usize, nb_cols: usize) void {
