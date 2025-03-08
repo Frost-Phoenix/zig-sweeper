@@ -192,6 +192,7 @@ pub const Grid = struct {
 
             if (cell.is_bomb) {
                 res_game_state = .lost;
+                cell.is_pressed = true;
             } else if (cell.number == 0) {
                 self.openConnectedEmptyCell(pos);
             }
