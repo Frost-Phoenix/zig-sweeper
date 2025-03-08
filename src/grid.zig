@@ -227,7 +227,19 @@ pub const Grid = struct {
             res_game_state = .win;
         }
 
+        if (res_game_state == .lost) {
+            self.openAllBombCells();
+        }
+
         return res_game_state;
+    }
+
+    pub fn openAllBombCells(self: *Grid) void {
+        for (self.cells) |*cell| {
+            if (!cell.is_bomb) continue;
+
+            cell.is_closed = false;
+        }
     }
 
     pub fn flaggCell(self: *Grid, pos: Pos) void {

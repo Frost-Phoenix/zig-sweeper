@@ -141,6 +141,10 @@ fn renderGrid() void {
 }
 
 fn getCellTextureOffset(cell: *const Cell) usize {
+    if (game_state == .lost) {
+        if (cell.is_flagged and !cell.is_bomb) return 5;
+    }
+
     if (cell.is_flagged) return 2;
     if (cell.is_pressed) return 1;
     if (cell.is_closed) return 0;
