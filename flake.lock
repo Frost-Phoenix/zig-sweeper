@@ -335,11 +335,11 @@
         "zig2nix": "zig2nix_2"
       },
       "locked": {
-        "lastModified": 1741360895,
-        "narHash": "sha256-fUq1tVq6hEDRjRUHzRTUbuaou3w8IsQ4B4Jsvr+I8IU=",
+        "lastModified": 1741428580,
+        "narHash": "sha256-+lEt6p+aHmhPbYNsGzhYx2HxdE65n0P6Dof6qSDOHYI=",
         "owner": "frost-phoenix",
         "repo": "zigimports",
-        "rev": "aceb2ea084d697df161fc5c43d5eaf6354f77201",
+        "rev": "20b5b0c667bbbc125117d96df6a2bf29a2c1af00",
         "type": "github"
       },
       "original": {
