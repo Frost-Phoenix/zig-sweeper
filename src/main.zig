@@ -1,10 +1,4 @@
 const std = @import("std");
-const print = std.debug.print;
-
-const rl = @import("raylib");
-const Color = rl.Color;
-
-const CELL_SIZE = @import("common.zig").CELL_SIZE;
 
 const game = @import("game.zig");
 
@@ -22,5 +16,5 @@ pub fn main() !void {
     try game.init(allocator, nb_rows, nb_cols, nb_bombs);
     defer game.deinit(allocator);
 
-    try game.run();
+    game.run();
 }

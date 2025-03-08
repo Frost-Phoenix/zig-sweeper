@@ -124,14 +124,14 @@ pub const Grid = struct {
         return &self.cells[idx];
     }
 
-    fn openConnectedEmptyCell(self: *Grid, start_pos: Pos) !void {
+    fn openConnectedEmptyCell(self: *Grid, start_pos: Pos) void {
         var queue = Queue(Pos).init(self.allocator);
         defer queue.deinit();
 
-        try queue.enqueue(start_pos);
+        queue.enqueue(start_pos);
 
         while (!queue.isEmpty()) {
-            const pos = try queue.dequeue();
+            const pos = queue.dequeue() catch unreachable;
 
             for (DIRS) |dir| {
                 const row = @as(i32, @intCast(pos.row)) + dir[0];
@@ -153,7 +153,7 @@ pub const Grid = struct {
 
                 if (cell.number != 0) continue;
 
-                try queue.enqueue(offset_pos);
+                queue.enqueue(offset_pos);
             }
         }
     }
@@ -180,7 +180,7 @@ pub const Grid = struct {
         return nb_flags;
     }
 
-    pub fn openCell(self: *Grid, pos: Pos) !GameState {
+    pub fn openCell(self: *Grid, pos: Pos) GameState {
         const cell = self.getCell(pos);
         var res_game_state: GameState = .playing;
 
@@ -193,7 +193,7 @@ pub const Grid = struct {
             if (cell.is_bomb) {
                 res_game_state = .lost;
             } else if (cell.number == 0) {
-                try self.openConnectedEmptyCell(pos);
+                self.openConnectedEmptyCell(pos);
             }
         } else if (cell.number != 0) {
             const nb_flags = self.getNbConnectedFlags(pos);
@@ -214,7 +214,7 @@ pub const Grid = struct {
 
                     if (offset_cell.is_flagged or !offset_cell.is_closed) continue;
 
-                    const game_state = try self.openCell(offset_pos);
+                    const game_state = self.openCell(offset_pos);
 
                     if (game_state == .lost) {
                         res_game_state = game_state;

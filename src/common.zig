@@ -39,8 +39,8 @@ pub fn Queue(comptime T: type) type {
             }
         }
 
-        pub fn enqueue(self: *This, val: T) !void {
-            const node = try self.gpa.create(Node);
+        pub fn enqueue(self: *This, val: T) void {
+            const node = self.gpa.create(Node) catch @panic("Can't allocate memory");
             node.* = .{
                 .data = val,
                 .next = null,

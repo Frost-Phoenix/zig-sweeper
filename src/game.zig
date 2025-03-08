@@ -49,24 +49,24 @@ pub fn deinit(allocator: Allocator) void {
     rl.closeWindow();
 }
 
-pub fn run() !void {
+pub fn run() void {
     rl.setTargetFPS(FPS);
 
     while (!rl.windowShouldClose()) {
-        try update();
+        update();
         render();
     }
 }
 
-pub fn update() !void {
+pub fn update() void {
     if (game_state == .playing) {
-        try updateMouse();
+        updateMouse();
     }
 
     updateKeyboard();
 }
 
-fn updateMouse() !void {
+fn updateMouse() void {
     const mouse_pos = rl.getMousePosition();
 
     if (!mouseInsideWindow(mouse_pos)) {
@@ -80,7 +80,7 @@ fn updateMouse() !void {
         grid.flaggCell(pos);
     } else if (rl.isMouseButtonReleased(.left)) {
         grid.unpressAll();
-        game_state = try grid.openCell(pos);
+        game_state = grid.openCell(pos);
     } else if (rl.isMouseButtonDown(.left)) {
         grid.pressCell(pos);
     }
