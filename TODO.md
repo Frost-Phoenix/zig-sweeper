@@ -1,11 +1,11 @@
 ### gameplay
 
 - [x] game loop (win / lose / restart game)
-- [ ] dificulty selection
-- [ ] custom map
+- [x] dificulty selection
+- [x] custom map
 - [x] open adjacent cell when nb flags
-- [ ] no guessing mode
 - [x] auto open emty cells
+- [ ] no guessing mode
 - [ ] re-implement camera with wheel zoom / window scale
 
 ### art
@@ -25,5 +25,6 @@
 
 ### other
 
-- [ ] flake
+- [x] flake
 - [ ] implement a solver
+- [ ] update to zig 0.14.0
