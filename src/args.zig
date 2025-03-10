@@ -6,6 +6,12 @@ const parseUnsigned = std.fmt.parseUnsigned;
 
 const GridSpec = @import("grid.zig").GridSpec;
 
+const CustomGridError = error{
+    ToManyBombs,
+    SizeOutOfRange,
+    WrongArgumentType,
+};
+
 // ***** //
 
 pub fn parseArgs(allocator: Allocator) !GridSpec {
@@ -42,6 +48,10 @@ fn initCustomGrid(args: [][]u8) !GridSpec {
     const nb_rows = try parseUnsigned(usize, args[3], 10);
     const nb_bombs = try parseInt(i32, args[4], 10);
 
+    if (!(5 <= nb_rows and nb_rows <= 70)) return error.SizeOutOfRange;
+    if (!(5 <= nb_cols and nb_cols <= 115)) return error.SizeOutOfRange;
+    if (nb_bombs > nb_rows * nb_cols) return error.ToManyBombs;
+
     return GridSpec{
         .nb_cols = nb_cols,
         .nb_rows = nb_rows,
@@ -63,7 +73,7 @@ fn exitSuccess() void {
 
 fn printHelp(writer: std.fs.File) void {
     writer.writeAll(
-        \\Usage: zig-sweeper [difficulty]
+        \\Usage: zig-sweeper [difficulty] [options]
         \\
         \\Difficulties:
         \\
@@ -72,6 +82,12 @@ fn printHelp(writer: std.fs.File) void {
         \\  expert          30x16 with 99 bombs
         \\
         \\  custom <nb_cols> <nb_rows> <nb_bombs>
+        \\
+        \\Options:
+        \\
+        \\  nb_cols         between 5 and 115
+        \\  nb_rows         between 5 and  70
+        \\  nb_bombs        must be less that total number of cells
         \\
         \\General Options:
         \\
