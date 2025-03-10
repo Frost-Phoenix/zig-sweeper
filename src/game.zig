@@ -7,6 +7,7 @@ const Color = rl.Color;
 const Pos = @import("grid.zig").Pos;
 const Cell = @import("grid.zig").Cell;
 const Grid = @import("grid.zig").Grid;
+const GridSpec = @import("grid.zig").GridSpec;
 
 const loadTexture = @import("common.zig").loadTexture;
 const CELL_SIZE = @import("common.zig").CELL_SIZE;
@@ -28,11 +29,11 @@ pub const GameState = enum {
     lost,
 };
 
-pub fn init(allocator: Allocator, nb_rows: usize, nb_cols: usize, nb_bombs: i32) !void {
+pub fn init(allocator: Allocator, grid_spec: GridSpec) !void {
     game_state = .playing;
-    grid = Grid.init(allocator, nb_rows, nb_cols, nb_bombs);
+    grid = Grid.init(allocator, grid_spec);
 
-    initWindow(nb_rows, nb_cols);
+    initWindow(grid_spec.nb_rows, grid_spec.nb_cols);
     cell_texture = try loadTexture("cells_png");
 }
 

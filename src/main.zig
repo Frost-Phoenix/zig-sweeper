@@ -1,6 +1,7 @@
 const std = @import("std");
 
 const game = @import("game.zig");
+const parseArgs = @import("args.zig").parseArgs;
 
 // ***** //
 
@@ -9,11 +10,9 @@ pub fn main() !void {
     const allocator = gpa.allocator();
     defer _ = gpa.deinit();
 
-    const nb_rows: usize = 16;
-    const nb_cols: usize = 30;
-    const nb_bombs = 99;
+    const grid_spec = try parseArgs(allocator);
 
-    try game.init(allocator, nb_rows, nb_cols, nb_bombs);
+    try game.init(allocator, grid_spec);
     defer game.deinit(allocator);
 
     game.run();

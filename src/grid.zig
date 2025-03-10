@@ -18,6 +18,16 @@ const DIRS = [_][2]i32{
     .{ 1, 0 },
 };
 
+pub const GridSpec = struct {
+    nb_rows: usize,
+    nb_cols: usize,
+    nb_bombs: i32,
+
+    pub const beginner: GridSpec = .{ .nb_rows = 9, .nb_cols = 9, .nb_bombs = 10 };
+    pub const intermediate: GridSpec = .{ .nb_rows = 16, .nb_cols = 16, .nb_bombs = 40 };
+    pub const expert: GridSpec = .{ .nb_rows = 16, .nb_cols = 30, .nb_bombs = 99 };
+};
+
 pub const Pos = struct {
     row: usize,
     col: usize,
@@ -41,12 +51,12 @@ pub const Grid = struct {
 
     allocator: Allocator,
 
-    pub fn init(allocator: Allocator, nb_rows: usize, nb_cols: usize, nb_bombs: i32) @This() {
+    pub fn init(allocator: Allocator, grid_spec: GridSpec) @This() {
         var grid: Grid = Grid{
-            .cells = allocator.alloc(Cell, nb_rows * nb_cols) catch unreachable,
-            .nb_rows = nb_rows,
-            .nb_cols = nb_cols,
-            .nb_bombs = nb_bombs,
+            .cells = allocator.alloc(Cell, grid_spec.nb_rows * grid_spec.nb_cols) catch unreachable,
+            .nb_rows = grid_spec.nb_rows,
+            .nb_cols = grid_spec.nb_cols,
+            .nb_bombs = grid_spec.nb_bombs,
             .nb_open_cells = 0,
             .pressed_cells = undefined,
 
