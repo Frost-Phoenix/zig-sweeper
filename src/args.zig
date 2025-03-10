@@ -9,6 +9,7 @@ const GridSpec = @import("grid.zig").GridSpec;
 // ***** //
 
 pub fn parseArgs(allocator: Allocator) !GridSpec {
+    // TODO: add min and max size + check nb bombs
     const args = try std.process.argsAlloc(allocator);
     defer std.process.argsFree(allocator, args);
 

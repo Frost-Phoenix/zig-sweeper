@@ -73,7 +73,7 @@ pub const Grid = struct {
     }
 
     fn plantBombs(self: *Grid) void {
-        // assert: nb_bombs <= nb_rows * nb_cols
+        // TODO: assert: nb_bombs <= nb_rows * nb_cols
 
         // TODO: change this prng
         var prng = std.rand.DefaultPrng.init(blk: {
@@ -124,7 +124,7 @@ pub const Grid = struct {
     }
 
     fn getIdx(self: *Grid, pos: Pos) usize {
-        // assert: test if pos in bound
+        // TODO: assert: test if pos in bound
         return self.nb_cols * pos.row + pos.col;
     }
 
