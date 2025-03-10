@@ -236,6 +236,7 @@ pub const Grid = struct {
 
         if (self.nb_open_cells == self.nb_cols * self.nb_rows - @as(usize, @intCast(self.nb_bombs))) {
             res_game_state = .win;
+            self.flaggAllClosedBombs();
         }
 
         if (res_game_state == .lost) {
@@ -243,6 +244,16 @@ pub const Grid = struct {
         }
 
         return res_game_state;
+    }
+
+    pub fn flaggAllClosedBombs(self: *Grid) void {
+        for (self.cells) |*cell| {
+            if (!cell.is_bomb) continue;
+
+            if (cell.is_closed) {
+                cell.is_flagged = true;
+            }
+        }
     }
 
     pub fn openAllBombCells(self: *Grid) void {
