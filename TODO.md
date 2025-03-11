@@ -12,7 +12,7 @@
 
 - [ ] timer
 - [ ] bomb count
-- [ ] borders
+- [x] borders
 - [ ] scallable window
 - [ ] colored at runtime
 - [ ] support user made pallet
