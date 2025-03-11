@@ -17,10 +17,10 @@ const CELL_SIZE = @import("common.zig").CELL_SIZE;
 
 const FPS = 60;
 
-const BORDER_RIGHT_SIZE = 12;
-const BORDER_LEFT_SIZE = 8;
-const BORDER_TOP_SIZE = 55;
-const BORDER_BOTTOM_SIZE = 8;
+const BORDER_SIZE_RIGHT = 8;
+const BORDER_SIZE_LEFT = 12;
+const BORDER_SIZE_TOP = 55;
+const BORDER_SIZE_BOTTOM = 8;
 
 var screen_width: i32 = undefined;
 var screen_height: i32 = undefined;
@@ -53,8 +53,8 @@ pub fn init(allocator: Allocator, grid_spec: GridSpec) !void {
 }
 
 fn initWindow(nb_rows: usize, nb_cols: usize) void {
-    screen_width = @as(i32, @intCast(nb_cols)) * CELL_SIZE + BORDER_LEFT_SIZE + BORDER_RIGHT_SIZE;
-    screen_height = @as(i32, @intCast(nb_rows)) * CELL_SIZE + BORDER_TOP_SIZE + BORDER_BOTTOM_SIZE;
+    screen_width = @as(i32, @intCast(nb_cols)) * CELL_SIZE + BORDER_SIZE_LEFT + BORDER_SIZE_RIGHT;
+    screen_height = @as(i32, @intCast(nb_rows)) * CELL_SIZE + BORDER_SIZE_TOP + BORDER_SIZE_BOTTOM;
 
     rl.initWindow(screen_width, screen_height, "zig-sweeper");
 }
@@ -234,8 +234,8 @@ fn renderTimer() void {
 fn renderGrid() void {
     for (0..grid.nb_rows) |row| {
         for (0..grid.nb_cols) |col| {
-            const x = @as(f32, @floatFromInt(col * CELL_SIZE)) + BORDER_RIGHT_SIZE;
-            const y = @as(f32, @floatFromInt(row * CELL_SIZE)) + BORDER_TOP_SIZE;
+            const x = @as(f32, @floatFromInt(col * CELL_SIZE)) + BORDER_SIZE_LEFT;
+            const y = @as(f32, @floatFromInt(row * CELL_SIZE)) + BORDER_SIZE_TOP;
 
             const cell = grid.getCell(.{ .row = row, .col = col });
 
