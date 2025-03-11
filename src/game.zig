@@ -88,7 +88,9 @@ pub fn update() void {
 fn updateMouse() void {
     const mouse_pos = rl.getMousePosition();
 
-    if (!mouseInsideWindow(mouse_pos)) {
+    // Buttom press
+
+    if (!mouseInsideGrid(mouse_pos)) {
         grid.unpressAll();
         return;
     }
@@ -106,17 +108,23 @@ fn updateMouse() void {
 }
 
 fn getPosFromMousePos(mouse_pos: Vector2) Pos {
+    const grid_x = @as(usize, @intFromFloat(mouse_pos.x));
+    const grid_y = @as(usize, @intFromFloat(mouse_pos.y));
+
     return Pos{
-        .row = @divFloor(@as(usize, @intFromFloat(mouse_pos.y)), CELL_SIZE),
-        .col = @divFloor(@as(usize, @intFromFloat(mouse_pos.x)), CELL_SIZE),
+        .row = @divFloor(grid_y - BORDER_SIZE_TOP, CELL_SIZE),
+        .col = @divFloor(grid_x - BORDER_SIZE_LEFT, CELL_SIZE),
     };
 }
 
-fn mouseInsideWindow(mouse_pos: Vector2) bool {
+fn mouseInsideGrid(mouse_pos: Vector2) bool {
     const x = @as(i32, @intFromFloat(mouse_pos.x));
     const y = @as(i32, @intFromFloat(mouse_pos.y));
 
-    return 0 <= x and x < screen_width and 0 <= y and y < screen_height;
+    return BORDER_SIZE_LEFT <= x and
+        BORDER_SIZE_TOP <= y and
+        x < screen_width - BORDER_SIZE_RIGHT and
+        y < screen_height - BORDER_SIZE_BOTTOM;
 }
 
 fn updateKeyboard() void {
