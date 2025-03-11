@@ -46,7 +46,8 @@ pub const Grid = struct {
     nb_rows: usize,
     nb_cols: usize,
     nb_bombs: i32,
-    nb_open_cells: i32,
+    nb_cells_opened: i32,
+    nb_cells_flagged: i32,
     pressed_cells: [8]?*Cell,
 
     allocator: Allocator,
@@ -57,7 +58,8 @@ pub const Grid = struct {
             .nb_rows = grid_spec.nb_rows,
             .nb_cols = grid_spec.nb_cols,
             .nb_bombs = grid_spec.nb_bombs,
-            .nb_open_cells = 0,
+            .nb_cells_opened = 0,
+            .nb_cells_flagged = 0,
             .pressed_cells = undefined,
 
             .allocator = allocator,
@@ -73,8 +75,6 @@ pub const Grid = struct {
     }
 
     fn plantBombs(self: *Grid) void {
-        // TODO: assert: nb_bombs <= nb_rows * nb_cols
-
         // TODO: change this prng
         var prng = std.rand.DefaultPrng.init(blk: {
             var seed: u64 = undefined;
@@ -159,7 +159,7 @@ pub const Grid = struct {
                 if (!cell.is_closed or cell.is_flagged) continue;
 
                 cell.is_closed = false;
-                self.nb_open_cells += 1;
+                self.nb_cells_opened += 1;
 
                 if (cell.number != 0) continue;
 
@@ -198,7 +198,7 @@ pub const Grid = struct {
 
         if (cell.is_closed) {
             cell.is_closed = false;
-            self.nb_open_cells += 1;
+            self.nb_cells_opened += 1;
 
             if (cell.is_bomb) {
                 res_game_state = .lost;
@@ -234,7 +234,7 @@ pub const Grid = struct {
             }
         }
 
-        if (self.nb_open_cells == self.nb_cols * self.nb_rows - @as(usize, @intCast(self.nb_bombs))) {
+        if (self.nb_cells_opened == self.nb_cols * self.nb_rows - @as(usize, @intCast(self.nb_bombs))) {
             res_game_state = .win;
             self.flaggAllClosedBombs();
         }
@@ -271,7 +271,16 @@ pub const Grid = struct {
             return;
         }
 
-        cell.is_flagged = !cell.is_flagged;
+        switch (cell.is_flagged) {
+            true => {
+                cell.is_flagged = false;
+                self.nb_cells_flagged -= 1;
+            },
+            false => {
+                cell.is_flagged = true;
+                self.nb_cells_flagged += 1;
+            },
+        }
     }
 
     pub fn pressCell(self: *Grid, pos: Pos) void {
@@ -314,6 +323,14 @@ pub const Grid = struct {
         }
     }
 
+    pub fn getNbCellsFalgged(self: *Grid) i32 {
+        return self.nb_cells_flagged;
+    }
+
+    pub fn getNbBombs(self: *Grid) i32 {
+        return self.nb_bombs;
+    }
+
     pub fn unpressAll(self: *Grid) void {
         for (self.pressed_cells) |cell| {
             if (cell) |c| {
@@ -325,7 +342,7 @@ pub const Grid = struct {
     }
 
     pub fn reset(self: *Grid) void {
-        self.nb_open_cells = 0;
+        self.nb_cells_opened = 0;
         self.pressed_cells[0] = null;
 
         for (0..self.nb_rows * self.nb_cols) |idx| {

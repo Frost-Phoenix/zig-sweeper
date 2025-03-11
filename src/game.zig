@@ -101,6 +101,11 @@ fn updateMouse() void {
     const pos = getPosFromMousePos(mouse_pos);
 
     if (rl.isMouseButtonPressed(.right)) {
+        if (!has_made_first_move) {
+            game_start_time = rl.getTime();
+            has_made_first_move = true;
+        }
+
         grid.flaggCell(pos);
     } else if (rl.isMouseButtonReleased(.left)) {
         if (!has_made_first_move) {
@@ -215,10 +220,41 @@ fn renderBorders() void {
 }
 
 fn renderBombCount() void {
+    const nb_bombs = grid.getNbBombs();
+    const nb_flags = grid.getNbCellsFalgged();
+
+    var number: f32 = @as(f32, @floatFromInt(nb_bombs - nb_flags));
+    if (number > 999) number = 999;
+    if (number < -99) number = -99;
+    std.debug.print("{}\n", .{number});
+
+    var texture_offsets: [3]f32 = undefined;
+
+    if (number >= 0) {
+        texture_offsets = .{
+            @floor(@mod(number / 100, 10)),
+            @floor(@mod(number / 10, 10)),
+            @floor(@mod(number, 10)),
+        };
+    } else if (number > -10) {
+        texture_offsets = .{
+            11,
+            10,
+            @floor(@mod(@abs(number), 10)),
+        };
+    } else {
+        texture_offsets = .{
+            10,
+            @floor(@mod(@abs(number) / 10, 10)),
+            @floor(@mod(@abs(number), 10)),
+        };
+    }
+
     for (0..3) |i| {
         const offset = @as(f32, @floatFromInt(i));
+        const texture_offset = texture_offsets[i] * NUMBER_WIDTH;
 
-        const src = rl.Rectangle.init(0, 0, NUMBER_WIDTH, NUMBER_HEIGHT);
+        const src = rl.Rectangle.init(texture_offset, 0, NUMBER_WIDTH, NUMBER_HEIGHT);
         const dest = Vector2.init(17 + offset * NUMBER_WIDTH, 16);
 
         rl.drawTextureRec(numbers_texture, src, dest, Color.white);
