@@ -22,15 +22,18 @@ const BORDER_SIZE_LEFT = 12;
 const BORDER_SIZE_TOP = 55;
 const BORDER_SIZE_BOTTOM = 8;
 
+const NUMBER_WIDTH = 13;
+const NUMBER_HEIGHT = 23;
+const BUTTON_SIZE = 24;
+
 var screen_width: i32 = undefined;
 var screen_height: i32 = undefined;
 
 var grid: Grid = undefined;
 var game_state: GameState = undefined;
-
-const NUMBER_WIDTH = 13;
-const NUMBER_HEIGHT = 23;
-const BUTTON_SIZE = 24;
+var game_time: f32 = 0;
+var game_start_time: f64 = undefined;
+var has_made_first_move: bool = false;
 
 var cells_texture: rl.Texture2D = undefined;
 var numbers_texture: rl.Texture2D = undefined;
@@ -100,6 +103,11 @@ fn updateMouse() void {
     if (rl.isMouseButtonPressed(.right)) {
         grid.flaggCell(pos);
     } else if (rl.isMouseButtonReleased(.left)) {
+        if (!has_made_first_move) {
+            game_start_time = rl.getTime();
+            has_made_first_move = true;
+        }
+
         grid.unpressAll();
         game_state = grid.openCell(pos);
     } else if (rl.isMouseButtonDown(.left)) {
@@ -129,6 +137,7 @@ fn mouseInsideGrid(mouse_pos: Vector2) bool {
 
 fn updateKeyboard() void {
     if (rl.isKeyPressed(.r)) {
+        has_made_first_move = false;
         game_state = .playing;
         grid.reset();
     }
@@ -229,10 +238,22 @@ fn renderButtom() void {
 fn renderTimer() void {
     const sw_f = @as(f32, @floatFromInt(screen_width));
 
+    if (game_state == .playing) {
+        game_time = @floatCast(rl.getTime() - game_start_time);
+        if (game_time > 999) game_time = 999;
+    }
+
+    const texture_offsets = [_]f32{
+        @floor(@mod(game_time / 100, 10)),
+        @floor(@mod(game_time / 10, 10)),
+        @floor(@mod(game_time, 10)),
+    };
+
     for (0..3) |i| {
         const offset = @as(f32, @floatFromInt(i));
+        const texture_offset = if (has_made_first_move) texture_offsets[i] * NUMBER_WIDTH else 0;
 
-        const src = rl.Rectangle.init(0, 0, NUMBER_WIDTH, NUMBER_HEIGHT);
+        const src = rl.Rectangle.init(texture_offset, 0, NUMBER_WIDTH, NUMBER_HEIGHT);
         const dest = Vector2.init(sw_f - 54 + offset * NUMBER_WIDTH, 16);
 
         rl.drawTextureRec(numbers_texture, src, dest, Color.white);
