@@ -4,6 +4,8 @@ const rlz = @import("raylib-zig");
 fn addAssets(b: *std.Build, exe: *std.Build.Step.Compile) void {
     const assets = [_]struct { []const u8, []const u8 }{
         .{ "res/cells.png", "cells_png" },
+        .{ "res/numbers.png", "numbers_png" },
+        .{ "res/button.png", "button_png" },
     };
 
     for (assets) |asset| {

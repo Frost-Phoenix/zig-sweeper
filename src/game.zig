@@ -3,6 +3,7 @@ const Allocator = std.mem.Allocator;
 
 const rl = @import("raylib");
 const Color = rl.Color;
+const Vector2 = rl.Vector2;
 
 const Pos = @import("grid.zig").Pos;
 const Cell = @import("grid.zig").Cell;
@@ -16,12 +17,24 @@ const CELL_SIZE = @import("common.zig").CELL_SIZE;
 
 const FPS = 60;
 
+const BORDER_RIGHT_SIZE = 12;
+const BORDER_LEFT_SIZE = 8;
+const BORDER_TOP_SIZE = 55;
+const BORDER_BOTTOM_SIZE = 8;
+
 var screen_width: i32 = undefined;
 var screen_height: i32 = undefined;
 
 var grid: Grid = undefined;
 var game_state: GameState = undefined;
-var cell_texture: rl.Texture2D = undefined;
+
+const NUMBER_WIDTH = 13;
+const NUMBER_HEIGHT = 23;
+const BUTTON_SIZE = 24;
+
+var cells_texture: rl.Texture2D = undefined;
+var numbers_texture: rl.Texture2D = undefined;
+var buttons_texture: rl.Texture2D = undefined;
 
 pub const GameState = enum {
     playing,
@@ -34,12 +47,14 @@ pub fn init(allocator: Allocator, grid_spec: GridSpec) !void {
     grid = Grid.init(allocator, grid_spec);
 
     initWindow(grid_spec.nb_rows, grid_spec.nb_cols);
-    cell_texture = try loadTexture("cells_png");
+    cells_texture = try loadTexture("cells_png");
+    numbers_texture = try loadTexture("numbers_png");
+    buttons_texture = try loadTexture("button_png");
 }
 
 fn initWindow(nb_rows: usize, nb_cols: usize) void {
-    screen_width = @as(i32, @intCast(nb_cols)) * CELL_SIZE;
-    screen_height = @as(i32, @intCast(nb_rows)) * CELL_SIZE;
+    screen_width = @as(i32, @intCast(nb_cols)) * CELL_SIZE + BORDER_LEFT_SIZE + BORDER_RIGHT_SIZE;
+    screen_height = @as(i32, @intCast(nb_rows)) * CELL_SIZE + BORDER_TOP_SIZE + BORDER_BOTTOM_SIZE;
 
     rl.initWindow(screen_width, screen_height, "zig-sweeper");
 }
@@ -47,7 +62,9 @@ fn initWindow(nb_rows: usize, nb_cols: usize) void {
 pub fn deinit(allocator: Allocator) void {
     grid.deinit(allocator);
 
-    rl.unloadTexture(cell_texture);
+    rl.unloadTexture(cells_texture);
+    rl.unloadTexture(numbers_texture);
+    rl.unloadTexture(buttons_texture);
     rl.closeWindow();
 }
 
@@ -88,14 +105,14 @@ fn updateMouse() void {
     }
 }
 
-fn getPosFromMousePos(mouse_pos: rl.Vector2) Pos {
+fn getPosFromMousePos(mouse_pos: Vector2) Pos {
     return Pos{
         .row = @divFloor(@as(usize, @intFromFloat(mouse_pos.y)), CELL_SIZE),
         .col = @divFloor(@as(usize, @intFromFloat(mouse_pos.x)), CELL_SIZE),
     };
 }
 
-fn mouseInsideWindow(mouse_pos: rl.Vector2) bool {
+fn mouseInsideWindow(mouse_pos: Vector2) bool {
     const x = @as(i32, @intFromFloat(mouse_pos.x));
     const y = @as(i32, @intFromFloat(mouse_pos.y));
 
@@ -113,8 +130,10 @@ pub fn render() void {
     rl.beginDrawing();
     defer rl.endDrawing();
 
-    rl.clearBackground(Color.gray);
-
+    renderBorders();
+    renderBombCount();
+    renderButtom();
+    renderTimer();
     renderGrid();
 
     if (game_state != .playing) {
@@ -122,11 +141,101 @@ pub fn render() void {
     }
 }
 
+fn renderBorders() void {
+    const bg0 = rl.getColor(0x1D2021ff);
+    const bg1 = Color.fromInt(0x282828ff);
+    const fg0 = rl.getColor(0x504945ff);
+
+    const sw = screen_width;
+    const sh = screen_height;
+    const sw_h = @divFloor(sw, 2);
+    const sw_f = @as(f32, @floatFromInt(sw));
+    const sh_f = @as(f32, @floatFromInt(sh));
+
+    rl.clearBackground(bg1);
+
+    // Main border
+    rl.drawLineEx(Vector2.init(0, 2), Vector2.init(sw_f, 2), 3, fg0);
+    rl.drawLineEx(Vector2.init(2, 0), Vector2.init(2, sh_f), 3, fg0);
+
+    // Grid border
+    rl.drawLineEx(Vector2.init(9, 54), Vector2.init(sw_f - 6, 54), 3, bg0);
+    rl.drawLineEx(Vector2.init(11, 54), Vector2.init(11, sh_f - 6), 3, bg0);
+    rl.drawLineEx(Vector2.init(10, sh_f - 6), Vector2.init(sw_f - 5, sh_f - 6), 3, fg0);
+    rl.drawLineEx(Vector2.init(sw_f - 6, 53), Vector2.init(sw_f - 6, sh_f - 6), 3, fg0);
+    rl.drawPixelV(Vector2.init(sw_f - 8, 53), bg0);
+    rl.drawPixelV(Vector2.init(sw_f - 8, 54), bg1);
+    rl.drawPixelV(Vector2.init(sw_f - 7, 53), bg1);
+    rl.drawPixelV(Vector2.init(10, sh_f - 8), bg0);
+    rl.drawPixelV(Vector2.init(11, sh_f - 8), bg1);
+    rl.drawPixelV(Vector2.init(10, sh_f - 7), bg1);
+
+    // Top box (nb_bombs, clock, button)
+    rl.drawLineEx(Vector2.init(9, 10), Vector2.init(sw_f - 6, 10), 2, bg0);
+    rl.drawLineEx(Vector2.init(10, 9), Vector2.init(10, 45), 2, bg0);
+    rl.drawLineEx(Vector2.init(10, 45), Vector2.init(sw_f - 5, 45), 2, fg0);
+    rl.drawLineEx(Vector2.init(sw_f - 6, 10), Vector2.init(sw_f - 6, 45), 2, fg0);
+    rl.drawPixelV(Vector2.init(10, 44), bg1);
+    rl.drawPixelV(Vector2.init(sw_f - 7, 10), bg1);
+
+    // Button border
+    rl.drawLine(sw_h - 11, 16, sw_h + 14, 16, bg0);
+    rl.drawLine(sw_h - 10, 16, sw_h - 10, 40, bg0);
+    rl.drawLine(sw_h - 10, 41, sw_h + 15, 41, bg0);
+    rl.drawLine(sw_h + 15, 16, sw_h + 15, 41, bg0);
+
+    // Bomb count border
+    rl.drawLine(16, 15, 55 + 1, 15 + 1, bg0);
+    rl.drawLine(16, 15, 16 + 1, 38 + 1, bg0);
+    rl.drawLine(56, 16, 56 + 1, 39 + 1, fg0);
+    rl.drawLine(17, 39, 56 + 1, 39 + 1, fg0);
+
+    // Timer border
+    rl.drawLine(sw - 54, 15, sw - 15, 15 + 1, bg0);
+    rl.drawLine(sw - 54, 15, sw - 54, 38 + 1, bg0);
+    rl.drawLine(sw - 54, 39, sw - 14, 39 + 1, fg0);
+    rl.drawLine(sw - 15, 16, sw - 14, 39 + 1, fg0);
+}
+
+fn renderBombCount() void {
+    for (0..3) |i| {
+        const offset = @as(f32, @floatFromInt(i));
+
+        const src = rl.Rectangle.init(0, 0, NUMBER_WIDTH, NUMBER_HEIGHT);
+        const dest = Vector2.init(17 + offset * NUMBER_WIDTH, 16);
+
+        rl.drawTextureRec(numbers_texture, src, dest, Color.white);
+    }
+}
+
+fn renderButtom() void {
+    const sw_f = @as(f32, @floatFromInt(screen_width));
+    const sw_h = @divFloor(sw_f, 2);
+
+    const src = rl.Rectangle.init(0, 0, BUTTON_SIZE, BUTTON_SIZE);
+    const dest = Vector2.init(sw_h - 10, 16);
+
+    rl.drawTextureRec(buttons_texture, src, dest, Color.white);
+}
+
+fn renderTimer() void {
+    const sw_f = @as(f32, @floatFromInt(screen_width));
+
+    for (0..3) |i| {
+        const offset = @as(f32, @floatFromInt(i));
+
+        const src = rl.Rectangle.init(0, 0, NUMBER_WIDTH, NUMBER_HEIGHT);
+        const dest = Vector2.init(sw_f - 54 + offset * NUMBER_WIDTH, 16);
+
+        rl.drawTextureRec(numbers_texture, src, dest, Color.white);
+    }
+}
+
 fn renderGrid() void {
     for (0..grid.nb_rows) |row| {
         for (0..grid.nb_cols) |col| {
-            const x = @as(f32, @floatFromInt(col * CELL_SIZE));
-            const y = @as(f32, @floatFromInt(row * CELL_SIZE));
+            const x = @as(f32, @floatFromInt(col * CELL_SIZE)) + BORDER_RIGHT_SIZE;
+            const y = @as(f32, @floatFromInt(row * CELL_SIZE)) + BORDER_TOP_SIZE;
 
             const cell = grid.getCell(.{ .row = row, .col = col });
 
@@ -134,9 +243,9 @@ fn renderGrid() void {
             const offset_px = @as(f32, @floatFromInt(offset_idx * CELL_SIZE));
 
             const src = rl.Rectangle.init(offset_px, 0, CELL_SIZE, CELL_SIZE);
-            const dest = rl.Vector2.init(x, y);
+            const dest = Vector2.init(x, y);
 
-            rl.drawTextureRec(cell_texture, src, dest, Color.white);
+            rl.drawTextureRec(cells_texture, src, dest, Color.white);
         }
     }
 }
