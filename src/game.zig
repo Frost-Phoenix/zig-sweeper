@@ -226,7 +226,6 @@ fn renderBombCount() void {
     var number: f32 = @as(f32, @floatFromInt(nb_bombs - nb_flags));
     if (number > 999) number = 999;
     if (number < -99) number = -99;
-    std.debug.print("{}\n", .{number});
 
     var texture_offsets: [3]f32 = undefined;
 

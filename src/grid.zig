@@ -247,6 +247,8 @@ pub const Grid = struct {
     }
 
     pub fn flaggAllClosedBombs(self: *Grid) void {
+        self.nb_cells_flagged = self.nb_bombs;
+
         for (self.cells) |*cell| {
             if (!cell.is_bomb) continue;
 
@@ -343,6 +345,7 @@ pub const Grid = struct {
 
     pub fn reset(self: *Grid) void {
         self.nb_cells_opened = 0;
+        self.nb_cells_flagged = 0;
         self.pressed_cells[0] = null;
 
         for (0..self.nb_rows * self.nb_cols) |idx| {
