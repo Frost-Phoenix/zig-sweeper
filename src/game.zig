@@ -34,6 +34,7 @@ var game_state: GameState = undefined;
 var game_time: f64 = 0;
 var game_start_time: f64 = undefined;
 var has_made_first_move: bool = false;
+var button_state: ButtonState = undefined;
 
 var cells_texture: rl.Texture2D = undefined;
 var numbers_texture: rl.Texture2D = undefined;
@@ -45,8 +46,17 @@ pub const GameState = enum {
     lost,
 };
 
+const ButtonState = enum {
+    normal,
+    pressed,
+    cell_pressed,
+    win,
+    lost,
+};
+
 pub fn init(allocator: Allocator, grid_spec: GridSpec) !void {
     game_state = .playing;
+    button_state = .normal;
     grid = Grid.init(allocator, grid_spec);
 
     initWindow(grid_spec.nb_rows, grid_spec.nb_cols);
@@ -81,17 +91,13 @@ pub fn run() void {
 }
 
 pub fn update() void {
-    if (game_state == .playing) {
-        updateMouse();
-    }
-
+    if (game_state == .playing) updateGrid();
+    updateButton();
     updateKeyboard();
 }
 
-fn updateMouse() void {
+fn updateGrid() void {
     const mouse_pos = rl.getMousePosition();
-
-    // Buttom press
 
     if (!mouseInsideGrid(mouse_pos)) {
         grid.unpressAll();
@@ -140,13 +146,55 @@ fn mouseInsideGrid(mouse_pos: Vector2) bool {
         y < screen_height - BORDER_SIZE_BOTTOM;
 }
 
+fn updateButton() void {
+    const mouse_pos = rl.getMousePosition();
+
+    if (isMouseOnButton(mouse_pos)) {
+        if (rl.isMouseButtonDown(.left)) {
+            button_state = .pressed;
+        } else if (game_state == .playing) {
+            button_state = .normal;
+        }
+
+        if (rl.isMouseButtonReleased(.left)) {
+            resetGame();
+        }
+    } else if (game_state == .playing) {
+        if (rl.isMouseButtonDown(.left) and mouseInsideGrid(mouse_pos)) {
+            button_state = .cell_pressed;
+        } else {
+            button_state = .normal;
+        }
+    } else {
+        if (game_state == .win) button_state = .win;
+        if (game_state == .lost) button_state = .lost;
+    }
+}
+
+fn isMouseOnButton(mouse_pos: Vector2) bool {
+    const x = mouse_pos.x;
+    const y = mouse_pos.y;
+
+    const sw_f = @as(f32, @floatFromInt(screen_width));
+    const sw_h = @divFloor(sw_f, 2);
+
+    const start = Vector2.init(sw_h - 10, 16);
+    const end = Vector2.init(sw_h - 10 + BUTTON_SIZE, 16 + BUTTON_SIZE);
+
+    return start.x <= x and x <= end.x and start.y <= y and y <= end.y;
+}
+
 fn updateKeyboard() void {
     if (rl.isKeyPressed(.r)) {
-        has_made_first_move = false;
-        game_state = .playing;
-        game_time = 0;
-        grid.reset();
+        resetGame();
     }
+}
+
+fn resetGame() void {
+    has_made_first_move = false;
+    game_state = .playing;
+    game_time = 0;
+    grid.reset();
 }
 
 pub fn render() void {
@@ -155,13 +203,9 @@ pub fn render() void {
 
     renderBorders();
     renderBombCount();
-    renderButtom();
+    renderButton();
     renderTimer();
     renderGrid();
-
-    if (game_state != .playing) {
-        renderEndMessage();
-    }
 }
 
 fn renderBorders() void {
@@ -261,11 +305,14 @@ fn renderBombCount() void {
     }
 }
 
-fn renderButtom() void {
+fn renderButton() void {
     const sw_f = @as(f32, @floatFromInt(screen_width));
     const sw_h = @divFloor(sw_f, 2);
 
-    const src = rl.Rectangle.init(0, 0, BUTTON_SIZE, BUTTON_SIZE);
+    const offset: i32 = @intCast(@intFromEnum(button_state));
+    const texture_offset = @as(f32, @floatFromInt(offset * BUTTON_SIZE));
+
+    const src = rl.Rectangle.init(texture_offset, 0, BUTTON_SIZE, BUTTON_SIZE);
     const dest = Vector2.init(sw_h - 10, 16);
 
     rl.drawTextureRec(buttons_texture, src, dest, Color.white);
@@ -336,36 +383,4 @@ fn getCellTextureOffset(cell: *const Cell) usize {
     if (cell.number == 0) return 1;
 
     return cell.number + 5;
-}
-
-fn renderEndMessage() void {
-    const rect = rl.Rectangle.init(
-        @as(f32, @floatFromInt(@divFloor(screen_width, 2) - 100)),
-        @as(f32, @floatFromInt(@divFloor(screen_height, 2) - 30)),
-        200,
-        60,
-    );
-    rl.drawRectangleRec(rect, Color.black);
-
-    const txt = switch (game_state) {
-        .lost => "You lose",
-        .win => "You win !",
-        else => unreachable,
-    };
-
-    rl.drawText(
-        txt,
-        @divFloor(screen_width, 2) - 43,
-        @divFloor(screen_height, 2) - 15,
-        20,
-        Color.white,
-    );
-
-    rl.drawText(
-        "<R> to replay",
-        @divFloor(screen_width, 2) - 33,
-        @divFloor(screen_height, 2) + 10,
-        10,
-        Color.white,
-    );
 }
