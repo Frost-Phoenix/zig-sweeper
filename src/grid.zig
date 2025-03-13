@@ -343,6 +343,20 @@ pub const Grid = struct {
         }
     }
 
+    pub fn openAllCells(self: *Grid) void {
+        self.nb_cells_flagged = self.nb_bombs;
+
+        for (self.cells) |*cell| {
+            if (cell.is_bomb) {
+                cell.is_flagged = true;
+                continue;
+            }
+
+            cell.is_flagged = false;
+            cell.is_closed = false;
+        }
+    }
+
     pub fn reset(self: *Grid) void {
         self.nb_cells_opened = 0;
         self.nb_cells_flagged = 0;

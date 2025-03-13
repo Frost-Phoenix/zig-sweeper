@@ -185,8 +185,11 @@ fn isMouseOnButton(mouse_pos: Vector2) bool {
 }
 
 fn updateKeyboard() void {
-    if (rl.isKeyPressed(.r)) {
-        resetGame();
+    if (rl.isKeyPressed(.n)) resetGame();
+    // if (rl.isKeyPressed(.r)) resetCamera();
+    if (rl.isKeyPressed(.o)) {
+        grid.openAllCells();
+        game_state = .win;
     }
 }
 
