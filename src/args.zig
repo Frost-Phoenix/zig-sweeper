@@ -73,25 +73,40 @@ fn exitSuccess() void {
 
 fn printHelp(writer: std.fs.File) void {
     writer.writeAll(
-        \\Usage: zig-sweeper [difficulty] [options]
+        \\Usage: zig-sweeper [difficulty] [custom_grid_options] [options]
         \\
         \\Difficulties:
         \\
-        \\  beginner         9x9  with 10 bombs
-        \\  intermediate    16x16 with 40 bombs
-        \\  expert          30x16 with 99 bombs
+        \\  beginner                 9x9  with 10 bombs
+        \\  intermediate            16x16 with 40 bombs
+        \\  expert                  30x16 with 99 bombs
         \\
         \\  custom <nb_cols> <nb_rows> <nb_bombs>
         \\
-        \\Options:
+        \\Custom grid options:
         \\
-        \\  nb_cols         between 5 and 115
-        \\  nb_rows         between 5 and  70
-        \\  nb_bombs        must be less that total number of cells
+        \\  <nb_cols>               between 5 and 115
+        \\  <nb_rows>               between 5 and  70
+        \\  <nb_bombs>              must be less that total number of cells
         \\
         \\General Options:
         \\
-        \\  -h, --help      Print this help message and exit
+        \\  -s, --scale <amount>    Set window scale (default 2)
+        \\  -h, --help              Print this help message and exit
+        \\
+        \\Keybinds:
+        \\
+        \\  <ESQ>                   Quit
+        \\   <n>                    Generate new grid
+        \\   <o>                    Open all cells
+        \\   <r>                    Reset grid zoom and position
+        \\
+        \\Mouse:
+        \\
+        \\  left click              Open cell
+        \\  right click             Flag cell
+        \\  middle click            Drag grid when zoomed in
+        \\  wheel scroll            Zoom grid in/out
     ) catch unreachable;
     writer.writeAll("\n") catch unreachable;
 }
