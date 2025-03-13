@@ -10,6 +10,8 @@ const Cell = @import("grid.zig").Cell;
 const Grid = @import("grid.zig").Grid;
 const GridSpec = @import("grid.zig").GridSpec;
 
+const Camera = @import("camera.zig").Camera;
+
 const loadTexture = @import("common.zig").loadTexture;
 const CELL_SIZE = @import("common.zig").CELL_SIZE;
 
@@ -29,6 +31,7 @@ const BUTTON_SIZE = 24;
 var screen_width: i32 = undefined;
 var screen_height: i32 = undefined;
 
+var cam: Camera = undefined;
 var grid: Grid = undefined;
 var game_state: GameState = undefined;
 var game_time: f64 = 0;
@@ -63,6 +66,11 @@ pub fn init(allocator: Allocator, grid_spec: GridSpec) !void {
     cells_texture = try loadTexture("cells_png");
     numbers_texture = try loadTexture("numbers_png");
     buttons_texture = try loadTexture("button_png");
+    cam = try Camera.init(
+        @intCast(grid_spec.nb_cols * CELL_SIZE),
+        @intCast(grid_spec.nb_rows * CELL_SIZE),
+        2,
+    );
 }
 
 fn initWindow(nb_rows: usize, nb_cols: usize) void {
@@ -209,6 +217,7 @@ pub fn render() void {
     renderButton();
     renderTimer();
     renderGrid();
+    cam.renderGrid(&grid);
 }
 
 fn renderBorders() void {
