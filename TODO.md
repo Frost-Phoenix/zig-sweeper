@@ -10,8 +10,8 @@
 
 ### art
 
-- [ ] timer
-- [ ] bomb count
+- [x] timer
+- [x] bomb count
 - [x] borders
 - [ ] scallable window
 - [ ] colored at runtime
