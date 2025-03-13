@@ -31,7 +31,7 @@ var screen_height: i32 = undefined;
 
 var grid: Grid = undefined;
 var game_state: GameState = undefined;
-var game_time: f32 = 0;
+var game_time: f64 = 0;
 var game_start_time: f64 = undefined;
 var has_made_first_move: bool = false;
 
@@ -144,6 +144,7 @@ fn updateKeyboard() void {
     if (rl.isKeyPressed(.r)) {
         has_made_first_move = false;
         game_state = .playing;
+        game_time = 0;
         grid.reset();
     }
 }
@@ -273,12 +274,12 @@ fn renderButtom() void {
 fn renderTimer() void {
     const sw_f = @as(f32, @floatFromInt(screen_width));
 
-    if (game_state == .playing) {
-        game_time = @floatCast(rl.getTime() - game_start_time);
+    if (game_state == .playing and has_made_first_move) {
+        game_time = rl.getTime() - game_start_time;
         if (game_time > 999) game_time = 999;
     }
 
-    const texture_offsets = [_]f32{
+    const texture_offsets = [_]f64{
         @floor(@mod(game_time / 100, 10)),
         @floor(@mod(game_time / 10, 10)),
         @floor(@mod(game_time, 10)),
@@ -286,7 +287,14 @@ fn renderTimer() void {
 
     for (0..3) |i| {
         const offset = @as(f32, @floatFromInt(i));
-        const texture_offset = if (has_made_first_move) texture_offsets[i] * NUMBER_WIDTH else 0;
+        var texture_offset: f32 = undefined;
+
+        if (has_made_first_move) {
+            texture_offset = @floatCast(texture_offsets[i]);
+            texture_offset *= NUMBER_WIDTH;
+        } else {
+            texture_offset = 0;
+        }
 
         const src = rl.Rectangle.init(texture_offset, 0, NUMBER_WIDTH, NUMBER_HEIGHT);
         const dest = Vector2.init(sw_f - 54 + offset * NUMBER_WIDTH, 16);
