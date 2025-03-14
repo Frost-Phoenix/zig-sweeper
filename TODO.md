@@ -5,8 +5,8 @@
 - [x] custom map
 - [x] open adjacent cell when nb flags
 - [x] auto open emty cells
+- [x] re-implement camera with wheel zoom
 - [ ] no guessing mode
-- [ ] re-implement camera with wheel zoom / window scale
 
 ### art
 
