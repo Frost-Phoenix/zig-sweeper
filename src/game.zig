@@ -115,7 +115,7 @@ pub fn run() void {
     }
 }
 
-pub fn update() void {
+fn update() void {
     if (game_state == .playing) updateGrid();
     camera.update(getMousePos());
     updateButton();
@@ -210,10 +210,7 @@ fn isMouseOnButton(mouse_pos: Vector2) bool {
 }
 
 fn updateKeyboard() void {
-    if (rl.isKeyPressed(.n)) {
-        resetGame();
-        camera.reset();
-    }
+    if (rl.isKeyPressed(.n)) resetGame();
     if (rl.isKeyPressed(.r)) {
         camera.reset();
     }
@@ -228,9 +225,10 @@ fn resetGame() void {
     game_state = .playing;
     game_time = 0;
     grid.reset();
+    camera.reset();
 }
 
-pub fn render() void {
+fn render() void {
     { // Render grid to camera
         camera.renderStart();
         renderGrid();
