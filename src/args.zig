@@ -8,12 +8,6 @@ const GridSpec = @import("grid.zig").GridSpec;
 
 // ***** //
 
-const CustomGridError = error{
-    ToManyBombs,
-    SizeOutOfRange,
-    WrongArgumentType,
-};
-
 pub fn parseArgs(allocator: Allocator) !GridSpec {
     // TODO: add min and max size + check nb bombs
     const args = try std.process.argsAlloc(allocator);

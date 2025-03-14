@@ -5,7 +5,6 @@ const rl = @import("raylib");
 const Color = rl.Color;
 const Vector2 = rl.Vector2;
 
-const Pos = @import("grid.zig").Pos;
 const Cell = @import("grid.zig").Cell;
 const Grid = @import("grid.zig").Grid;
 const GridSpec = @import("grid.zig").GridSpec;
