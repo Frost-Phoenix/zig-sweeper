@@ -10,6 +10,8 @@ const Cell = @import("grid.zig").Cell;
 const Grid = @import("grid.zig").Grid;
 const GridSpec = @import("grid.zig").GridSpec;
 
+const Camera = @import("camera.zig").Camera;
+
 const loadTexture = @import("common.zig").loadTexture;
 const CELL_SIZE = @import("common.zig").CELL_SIZE;
 
@@ -17,10 +19,10 @@ const CELL_SIZE = @import("common.zig").CELL_SIZE;
 
 const FPS = 60;
 
-const BORDER_SIZE_RIGHT = 8;
-const BORDER_SIZE_LEFT = 12;
-const BORDER_SIZE_TOP = 55;
-const BORDER_SIZE_BOTTOM = 8;
+pub const BORDER_SIZE_RIGHT = 8;
+pub const BORDER_SIZE_LEFT = 12;
+pub const BORDER_SIZE_TOP = 55;
+pub const BORDER_SIZE_BOTTOM = 8;
 
 const NUMBER_WIDTH = 13;
 const NUMBER_HEIGHT = 23;
@@ -29,6 +31,7 @@ const BUTTON_SIZE = 24;
 var screen_width: i32 = undefined;
 var screen_height: i32 = undefined;
 
+var camera: Camera = undefined;
 var grid: Grid = undefined;
 var game_state: GameState = undefined;
 var game_time: f64 = 0;
@@ -63,6 +66,12 @@ pub fn init(allocator: Allocator, grid_spec: GridSpec) !void {
     cells_texture = try loadTexture("cells_png");
     numbers_texture = try loadTexture("numbers_png");
     buttons_texture = try loadTexture("button_png");
+    camera = try Camera.init(
+        @intCast(grid_spec.nb_cols * CELL_SIZE),
+        @intCast(grid_spec.nb_rows * CELL_SIZE),
+        1,
+        Vector2.init(BORDER_SIZE_LEFT, BORDER_SIZE_TOP),
+    );
 }
 
 fn initWindow(nb_rows: usize, nb_cols: usize) void {
@@ -92,6 +101,7 @@ pub fn run() void {
 
 pub fn update() void {
     if (game_state == .playing) updateGrid();
+    camera.update();
     updateButton();
     updateKeyboard();
 }
@@ -104,7 +114,7 @@ fn updateGrid() void {
         return;
     }
 
-    const pos = getPosFromMousePos(mouse_pos);
+    const pos = camera.getGridPosFromMouse(mouse_pos);
 
     if (rl.isMouseButtonPressed(.right)) {
         if (!has_made_first_move) {
@@ -124,16 +134,6 @@ fn updateGrid() void {
     } else if (rl.isMouseButtonDown(.left)) {
         grid.pressCell(pos);
     }
-}
-
-fn getPosFromMousePos(mouse_pos: Vector2) Pos {
-    const grid_x = @as(usize, @intFromFloat(mouse_pos.x));
-    const grid_y = @as(usize, @intFromFloat(mouse_pos.y));
-
-    return Pos{
-        .row = @divFloor(grid_y - BORDER_SIZE_TOP, CELL_SIZE),
-        .col = @divFloor(grid_x - BORDER_SIZE_LEFT, CELL_SIZE),
-    };
 }
 
 fn mouseInsideGrid(mouse_pos: Vector2) bool {
@@ -185,8 +185,13 @@ fn isMouseOnButton(mouse_pos: Vector2) bool {
 }
 
 fn updateKeyboard() void {
-    if (rl.isKeyPressed(.n)) resetGame();
-    // if (rl.isKeyPressed(.r)) resetCamera();
+    if (rl.isKeyPressed(.n)) {
+        resetGame();
+        camera.reset();
+    }
+    if (rl.isKeyPressed(.r)) {
+        camera.reset();
+    }
     if (rl.isKeyPressed(.o)) {
         grid.openAllCells();
         game_state = .win;
@@ -208,7 +213,11 @@ pub fn render() void {
     renderBombCount();
     renderButton();
     renderTimer();
-    renderGrid();
+    {
+        camera.renderStart();
+        defer camera.renderEnd();
+        renderGrid();
+    }
 }
 
 fn renderBorders() void {
@@ -356,8 +365,8 @@ fn renderTimer() void {
 fn renderGrid() void {
     for (0..grid.nb_rows) |row| {
         for (0..grid.nb_cols) |col| {
-            const x = @as(f32, @floatFromInt(col * CELL_SIZE)) + BORDER_SIZE_LEFT;
-            const y = @as(f32, @floatFromInt(row * CELL_SIZE)) + BORDER_SIZE_TOP;
+            const x = @as(f32, @floatFromInt(col * CELL_SIZE));
+            const y = @as(f32, @floatFromInt(row * CELL_SIZE));
 
             const cell = grid.getCell(.{ .row = row, .col = col });
 
