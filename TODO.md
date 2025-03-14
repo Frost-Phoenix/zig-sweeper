@@ -13,7 +13,7 @@
 - [x] timer
 - [x] bomb count
 - [x] borders
-- [ ] scallable window
+- [x] scallable window
 - [ ] colored at runtime
 - [ ] support user made pallet
 - [ ] custom art ?
