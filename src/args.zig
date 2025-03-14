@@ -79,7 +79,7 @@ fn getGridDifficulty(difficulty: []const u8) ?GridSpec {
     return null;
 }
 
-fn initCustomGrid(args: [][]u8) !GridSpec {
+fn initCustomGrid(args: [][:0]u8) !GridSpec {
     const nb_cols = try parseUnsigned(usize, args[2], 10);
     const nb_rows = try parseUnsigned(usize, args[3], 10);
     const nb_bombs = try parseInt(i32, args[4], 10);

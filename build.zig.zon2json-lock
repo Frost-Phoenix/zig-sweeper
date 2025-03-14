@@ -1,32 +1,32 @@
 {
-  "1220eedbc450fcfced1599d69f1e2c38b60af51616dbf724f6b9a8ed2c2a7c62cf9c": {
-    "name": "raylib-zig",
-    "url": "git+https://github.com/Not-Nik/raylib-zig?ref=devel#58724227e7fd90bebfcbd44c6013231447a67ff2",
-    "hash": "sha256-E6XQD/r2eye30e1Pc3cNEbqqb7lOzh/iXWJsAMJj7ew=",
-    "rev": "58724227e7fd90bebfcbd44c6013231447a67ff2"
+  "raylib_zig-5.6.0-dev-KE8REHguBQAE0xoNkra7mtEqr8cCZHk7k_03txLZB-cZ": {
+    "name": "raylib_zig",
+    "url": "git+https://github.com/Not-Nik/raylib-zig?ref=devel#d4fc514d54a3b37b9b3e4f4983f611c3469e8c2a",
+    "hash": "sha256-aoKpHu0YXuJb8WPTMJI7E7euHjAJrk4lpkb9Wy5jBvA=",
+    "rev": "d4fc514d54a3b37b9b3e4f4983f611c3469e8c2a"
   },
-  "1220d93782859726c2c46a05450615b7edfc82b7319daac50cbc7c3345d660b022d7": {
+  "raylib-5.5.0-whq8uGZGzQDi3_L7tJzgEINoZN-HwmOs0zkkc2g7ysIZ": {
     "name": "raylib",
-    "url": "https://github.com/raysan5/raylib/archive/c1ab645ca298a2801097931d1079b10ff7eb9df8.tar.gz",
-    "hash": "sha256-vjRDw/uX98vRiuPw6ipz5sFIYSjfM7Y53OfkQHD8KF0=",
-    "rev": "58724227e7fd90bebfcbd44c6013231447a67ff2"
+    "url": "git+https://github.com/raysan5/raylib?ref=master#61a026f7ef54f17428ee6fdf079b0d2e7bdbca73",
+    "hash": "sha256-9jpzbe/ihk+A3i5FI3qtDlVuVvi14i6L57WErfyZatI=",
+    "rev": "61a026f7ef54f17428ee6fdf079b0d2e7bdbca73"
   },
-  "12208da4dfcd9b53fb367375fb612ec73f38e53015f1ce6ae6d6e8437a637078e170": {
+  "N-V-__8AABHMqAWYuRdIlflwi8gksPnlUMQBiSxAqQAAZFms": {
     "name": "xcode_frameworks",
-    "url": "git+https://github.com/hexops/xcode-frameworks#a6bf82e032d4d9923ad5c222d466710fcc05f249",
-    "hash": "sha256-TLEn3MdxYeJMvjkBd26bc+7CWyZngHdsi4HExXxEO34=",
-    "rev": "a6bf82e032d4d9923ad5c222d466710fcc05f249"
+    "url": "git+https://github.com/hexops/xcode-frameworks#9a45f3ac977fd25dff77e58c6de1870b6808c4a7",
+    "hash": "sha256-xveFYoQu0BT+ZtEsyca/zdQ/so9jPK56SeX3xmF3iro=",
+    "rev": "9a45f3ac977fd25dff77e58c6de1870b6808c4a7"
   },
-  "1220e8fe9509f0843e5e22326300ca415c27afbfbba3992f3c3184d71613540b5564": {
+  "N-V-__8AALRTBQDo_pUJ8IQ-XiIyYwDKQVwnr7-7o5kvPDGE": {
     "name": "emsdk",
     "url": "git+https://github.com/emscripten-core/emsdk#3.1.50",
     "hash": "sha256-YUwb8yfz26Tfz4wyN13MBsdyA40ygJwfxHWt4eFMvQE=",
     "rev": "e2627e265d940db5ea58dffa63e490375bfc92e5"
   },
-  "122062b24f031e68f0d11c91dfc32aed5baf06caf26ed3c80ea1802f9e788ef1c358": {
+  "N-V-__8AAPZ7UgBpukXNy27vajQpyiPrEZpV6jOLzI6-Otc_": {
     "name": "raygui",
-    "url": "https://github.com/raysan5/raygui/archive/1e03efca48c50c5ea4b4a053d5bf04bad58d3e43.tar.gz",
-    "hash": "sha256-ECGAVe3nyJNafrBdJUhqNCtBPlIULG1GDspC9S4Vg9A=",
-    "rev": "e2627e265d940db5ea58dffa63e490375bfc92e5"
+    "url": "git+https://github.com/raysan5/raygui#9a95871701a5fc63bea35eab73fef6414e048b73",
+    "hash": "sha256-5C/maQ7sNKCQdc4kNrFoCfBp/YTWsMpgZ6kSIqZWjQ4=",
+    "rev": "9a95871701a5fc63bea35eab73fef6414e048b73"
   }
 }
