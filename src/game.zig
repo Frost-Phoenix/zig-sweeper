@@ -1,6 +1,8 @@
 const std = @import("std");
 const Allocator = std.mem.Allocator;
 
+const BUILD_MODE = @import("builtin").mode;
+
 const rl = @import("raylib");
 const Color = rl.Color;
 const Vector2 = rl.Vector2;
@@ -88,6 +90,11 @@ fn initRaylib(nb_rows: usize, nb_cols: usize) !void {
     screen_width = grid_width + BORDER_SIZE_LEFT + BORDER_SIZE_RIGHT;
     screen_height = grid_height + BORDER_SIZE_TOP + BORDER_SIZE_BOTTOM;
 
+    if (BUILD_MODE == .Debug) {
+        rl.setTraceLogLevel(.all);
+    } else rl.setTraceLogLevel(.warning);
+
+    rl.setTargetFPS(FPS);
     rl.initWindow(screen_width * scale, screen_height * scale, "zig-sweeper");
 
     cells_texture = try loadTexture("cells_png");
@@ -107,8 +114,6 @@ pub fn deinit(allocator: Allocator) void {
 }
 
 pub fn run() void {
-    rl.setTargetFPS(FPS);
-
     while (!rl.windowShouldClose()) {
         update();
         render();
