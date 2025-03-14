@@ -76,7 +76,7 @@ pub const Grid = struct {
 
     fn plantBombs(self: *Grid) void {
         // TODO: change this prng
-        var prng = std.Random.DefaultPrng.init(blk: {
+        var prng: std.Random.DefaultPrng = .init(blk: {
             var seed: u64 = undefined;
             std.posix.getrandom(std.mem.asBytes(&seed)) catch unreachable;
             break :blk seed;
@@ -135,7 +135,7 @@ pub const Grid = struct {
     }
 
     fn openConnectedEmptyCell(self: *Grid, start_pos: Pos) void {
-        var queue = Queue(Pos).init(self.allocator);
+        var queue: Queue(Pos) = .init(self.allocator);
         defer queue.deinit();
 
         queue.enqueue(start_pos);
