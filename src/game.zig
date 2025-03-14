@@ -122,7 +122,7 @@ pub fn run() void {
 
 fn update() void {
     if (game_state == .playing) updateGrid();
-    camera.update(getMousePos());
+    camera.update(getMousePos(), scale);
     updateButton();
     updateKeyboard();
 }

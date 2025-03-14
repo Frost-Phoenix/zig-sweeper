@@ -46,12 +46,15 @@ pub const Camera = struct {
         camera.zoom = ZOOM_DEFAULT;
     }
 
-    pub fn update(self: *Camera, mouse_pos: rl.Vector2) void {
+    pub fn update(self: *Camera, mouse_pos: rl.Vector2, scale: i32) void {
         const camera = &self.camera;
 
         // Move
         if (rl.isMouseButtonDown(.middle)) {
             var delta = rl.getMouseDelta();
+            delta.x /= @as(f32, @floatFromInt(scale));
+            delta.y /= @as(f32, @floatFromInt(scale));
+
             delta = rl.math.vector2Scale(delta, -1.0 / camera.zoom);
             camera.target = rl.math.vector2Add(camera.target, delta);
         }
