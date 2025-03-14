@@ -15,7 +15,13 @@ pub fn parseArgs(allocator: Allocator) !GameSpec {
     const args = try std.process.argsAlloc(allocator);
     defer std.process.argsFree(allocator, args);
 
-    if (!(args.len == 2 or args.len == 5)) {
+    // different combinaisons:
+    //  - help
+    //  - difficulty
+    //  - difficulty + scale
+    //  - custom grig
+    //  - custom grid + scale
+    if (!(args.len == 2 or args.len == 4 or args.len == 5 or args.len == 7)) {
         exitError();
     }
 
@@ -25,10 +31,24 @@ pub fn parseArgs(allocator: Allocator) !GameSpec {
 
     var game_spec: GameSpec = GameSpec{
         .grid_spec = undefined,
-        .scale = DEFAULT_SCALE, // default scale
+        .scale = DEFAULT_SCALE,
     };
 
-    if (args.len == 2) {
+    if (args.len == 4 or args.len == 7) {
+        if (!(memEql(u8, args[args.len - 2], "-s") or memEql(u8, args[args.len - 2], "--scale"))) {
+            exitError();
+        }
+        game_spec.scale = parseInt(i32, args[args.len - 1], 10) catch {
+            exitError();
+            unreachable;
+        };
+
+        if (game_spec.scale < 1 or game_spec.scale > 5) {
+            exitError();
+        }
+    }
+
+    if (args.len == 2 or args.len == 4) {
         const grid_spec = getGridDifficulty(args[1]);
 
         if (grid_spec) |val| {
@@ -107,7 +127,7 @@ fn printHelp(writer: std.fs.File) void {
         \\
         \\General Options:
         \\
-        \\  -s, --scale <amount>    Set window scale (default 2)
+        \\  -s, --scale <amount>    Set window scale (default 2, max 5)
         \\  -h, --help              Print this help message and exit
         \\
         \\Keybinds:
