@@ -96,14 +96,10 @@
         };
 
         # nix run .
-        apps.default =
-          let
-            pkg = packages.target.${system-triple};
-          in
-          {
-            type = "app";
-            program = env.app [ ] "${pkg}/bin/zig-sweeper \"$@\"";
-          };
+        apps.default = {
+          type = "app";
+          program = "${packages.default}/bin/zig-sweeper \"$@\"";
+        };
 
         # nix run .#build
         apps.build = env.app [ ] "zig build \"$@\"";
