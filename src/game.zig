@@ -27,6 +27,7 @@ const NUMBER_WIDTH = 13;
 const NUMBER_HEIGHT = 23;
 const BUTTON_SIZE = 24;
 
+var scale: i32 = undefined;
 var screen_width: i32 = undefined;
 var screen_height: i32 = undefined;
 
@@ -41,6 +42,12 @@ var button_state: ButtonState = undefined;
 var cells_texture: rl.Texture2D = undefined;
 var numbers_texture: rl.Texture2D = undefined;
 var buttons_texture: rl.Texture2D = undefined;
+var render_texture: rl.RenderTexture2D = undefined;
+
+pub const GameSpec = struct {
+    grid_spec: GridSpec,
+    scale: i32,
+};
 
 pub const GameState = enum {
     playing,
@@ -56,28 +63,37 @@ const ButtonState = enum {
     lost,
 };
 
-pub fn init(allocator: Allocator, grid_spec: GridSpec) !void {
+pub fn init(allocator: Allocator, game_spec: GameSpec) !void {
+    const grid_spec = game_spec.grid_spec;
+    const nb_rows = grid_spec.nb_rows;
+    const nb_cols = grid_spec.nb_cols;
+
+    scale = game_spec.scale;
     game_state = .playing;
     button_state = .normal;
     grid = Grid.init(allocator, grid_spec);
 
-    initWindow(grid_spec.nb_rows, grid_spec.nb_cols);
-    cells_texture = try loadTexture("cells_png");
-    numbers_texture = try loadTexture("numbers_png");
-    buttons_texture = try loadTexture("button_png");
+    try initRaylib(nb_rows, nb_cols);
     camera = try Camera.init(
-        @intCast(grid_spec.nb_cols * CELL_SIZE),
-        @intCast(grid_spec.nb_rows * CELL_SIZE),
-        1,
+        @intCast(nb_cols * CELL_SIZE),
+        @intCast(nb_rows * CELL_SIZE),
         Vector2.init(BORDER_SIZE_LEFT, BORDER_SIZE_TOP),
     );
 }
 
-fn initWindow(nb_rows: usize, nb_cols: usize) void {
-    screen_width = @as(i32, @intCast(nb_cols)) * CELL_SIZE + BORDER_SIZE_LEFT + BORDER_SIZE_RIGHT;
-    screen_height = @as(i32, @intCast(nb_rows)) * CELL_SIZE + BORDER_SIZE_TOP + BORDER_SIZE_BOTTOM;
+fn initRaylib(nb_rows: usize, nb_cols: usize) !void {
+    const grid_width = @as(i32, @intCast(nb_cols)) * CELL_SIZE;
+    const grid_height = @as(i32, @intCast(nb_rows)) * CELL_SIZE;
 
-    rl.initWindow(screen_width, screen_height, "zig-sweeper");
+    screen_width = grid_width + BORDER_SIZE_LEFT + BORDER_SIZE_RIGHT;
+    screen_height = grid_height + BORDER_SIZE_TOP + BORDER_SIZE_BOTTOM;
+
+    rl.initWindow(screen_width * scale, screen_height * scale, "zig-sweeper");
+
+    cells_texture = try loadTexture("cells_png");
+    numbers_texture = try loadTexture("numbers_png");
+    buttons_texture = try loadTexture("button_png");
+    render_texture = try rl.loadRenderTexture(screen_width, screen_height);
 }
 
 pub fn deinit(allocator: Allocator) void {
@@ -86,6 +102,7 @@ pub fn deinit(allocator: Allocator) void {
     rl.unloadTexture(cells_texture);
     rl.unloadTexture(numbers_texture);
     rl.unloadTexture(buttons_texture);
+    rl.unloadRenderTexture(render_texture);
     rl.closeWindow();
 }
 
@@ -100,13 +117,13 @@ pub fn run() void {
 
 pub fn update() void {
     if (game_state == .playing) updateGrid();
-    camera.update();
+    camera.update(getMousePos());
     updateButton();
     updateKeyboard();
 }
 
 fn updateGrid() void {
-    const mouse_pos = rl.getMousePosition();
+    const mouse_pos = getMousePos();
 
     if (!mouseInsideGrid(mouse_pos)) {
         grid.unpressAll();
@@ -135,6 +152,15 @@ fn updateGrid() void {
     }
 }
 
+fn getMousePos() Vector2 {
+    const mouse_pos_scaled = rl.getMousePosition();
+
+    return Vector2.init(
+        mouse_pos_scaled.x / @as(f32, @floatFromInt(scale)),
+        mouse_pos_scaled.y / @as(f32, @floatFromInt(scale)),
+    );
+}
+
 fn mouseInsideGrid(mouse_pos: Vector2) bool {
     const x = @as(i32, @intFromFloat(mouse_pos.x));
     const y = @as(i32, @intFromFloat(mouse_pos.y));
@@ -146,7 +172,7 @@ fn mouseInsideGrid(mouse_pos: Vector2) bool {
 }
 
 fn updateButton() void {
-    const mouse_pos = rl.getMousePosition();
+    const mouse_pos = getMousePos();
 
     if (isMouseOnButton(mouse_pos)) {
         if (rl.isMouseButtonDown(.left)) {
@@ -205,17 +231,42 @@ fn resetGame() void {
 }
 
 pub fn render() void {
-    rl.beginDrawing();
-    defer rl.endDrawing();
-
-    renderBorders();
-    renderBombCount();
-    renderButton();
-    renderTimer();
-    {
+    { // Render grid to camera
         camera.renderStart();
-        defer camera.renderEnd();
         renderGrid();
+        defer camera.renderEnd();
+    }
+
+    { // Render game to render texture
+        render_texture.begin();
+        defer render_texture.end();
+
+        renderBorders();
+        renderBombCount();
+        renderButton();
+        renderTimer();
+
+        // Render camera to render texture
+        camera.renderTexture();
+    }
+
+    { // Render to screen
+        rl.beginDrawing();
+        defer rl.endDrawing();
+
+        const src = rl.Rectangle.init(
+            0,
+            0,
+            @as(f32, @floatFromInt(screen_width)),
+            -@as(f32, @floatFromInt(screen_height)),
+        );
+        const dest = rl.Rectangle.init(
+            0,
+            0,
+            @as(f32, @floatFromInt(screen_width * scale)),
+            @as(f32, @floatFromInt(screen_height * scale)),
+        );
+        rl.drawTexturePro(render_texture.texture, src, dest, Vector2.init(0, 0), 0, Color.white);
     }
 }
 
@@ -233,13 +284,13 @@ fn renderBorders() void {
     rl.clearBackground(bg1);
 
     // Main border
-    rl.drawLineEx(Vector2.init(0, 2), Vector2.init(sw_f, 2), 3, fg0);
+    rl.drawLineEx(Vector2.init(0, 1), Vector2.init(sw_f, 1), 3, fg0);
     rl.drawLineEx(Vector2.init(2, 0), Vector2.init(2, sh_f), 3, fg0);
 
     // Grid border
-    rl.drawLineEx(Vector2.init(9, 54), Vector2.init(sw_f - 6, 54), 3, bg0);
-    rl.drawLineEx(Vector2.init(11, 54), Vector2.init(11, sh_f - 6), 3, bg0);
-    rl.drawLineEx(Vector2.init(10, sh_f - 6), Vector2.init(sw_f - 5, sh_f - 6), 3, fg0);
+    rl.drawLineEx(Vector2.init(9, 53), Vector2.init(sw_f - 6, 53), 3, bg0);
+    rl.drawLineEx(Vector2.init(11, 53), Vector2.init(11, sh_f - 6), 3, bg0);
+    rl.drawLineEx(Vector2.init(10, sh_f - 7), Vector2.init(sw_f - 5, sh_f - 7), 3, fg0);
     rl.drawLineEx(Vector2.init(sw_f - 6, 53), Vector2.init(sw_f - 6, sh_f - 6), 3, fg0);
     rl.drawPixelV(Vector2.init(sw_f - 8, 53), bg0);
     rl.drawPixelV(Vector2.init(sw_f - 8, 54), bg1);
@@ -248,7 +299,7 @@ fn renderBorders() void {
     rl.drawPixelV(Vector2.init(11, sh_f - 8), bg1);
     rl.drawPixelV(Vector2.init(10, sh_f - 7), bg1);
 
-    // Top box (nb_bombs, clock, button)
+    // Top box border
     rl.drawLineEx(Vector2.init(9, 10), Vector2.init(sw_f - 6, 10), 2, bg0);
     rl.drawLineEx(Vector2.init(10, 9), Vector2.init(10, 45), 2, bg0);
     rl.drawLineEx(Vector2.init(10, 45), Vector2.init(sw_f - 5, 45), 2, fg0);
@@ -257,10 +308,10 @@ fn renderBorders() void {
     rl.drawPixelV(Vector2.init(sw_f - 7, 10), bg1);
 
     // Button border
-    rl.drawLine(sw_h - 11, 16, sw_h + 14, 16, bg0);
-    rl.drawLine(sw_h - 10, 16, sw_h - 10, 40, bg0);
-    rl.drawLine(sw_h - 10, 41, sw_h + 15, 41, bg0);
-    rl.drawLine(sw_h + 15, 16, sw_h + 15, 41, bg0);
+    rl.drawLine(sw_h - 11, 15, sw_h + 14, 15, bg0);
+    rl.drawLine(sw_h - 10, 15, sw_h - 10, 40, bg0);
+    rl.drawLine(sw_h - 10, 40, sw_h + 15, 40, bg0);
+    rl.drawLine(sw_h + 15, 16, sw_h + 15, 40, bg0);
 
     // Bomb count border
     rl.drawLine(16, 15, 55 + 1, 15 + 1, bg0);

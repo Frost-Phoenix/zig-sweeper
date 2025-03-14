@@ -8,10 +8,10 @@ const BORDER_SIZE_LEFT = @import("game.zig").BORDER_SIZE_LEFT;
 
 // ***** //
 
-const MAX_ZOOM = 16;
+const ZOOM_MAX = 16;
+const ZOOM_DEFAULT = 1;
 
 pub const Camera = struct {
-    scale: f32,
     width: f32,
     height: f32,
     offset: rl.Vector2,
@@ -19,16 +19,15 @@ pub const Camera = struct {
     camera: rl.Camera2D,
     render_texture: rl.RenderTexture2D,
 
-    pub fn init(width: i32, height: i32, scale: i32, offset: rl.Vector2) !@This() {
+    pub fn init(width: i32, height: i32, offset: rl.Vector2) !@This() {
         return Camera{
-            .scale = @as(f32, @floatFromInt(scale)),
             .width = @as(f32, @floatFromInt(width)),
             .height = @as(f32, @floatFromInt(height)),
             .offset = offset,
             .camera = rl.Camera2D{
                 .target = .{ .x = 0, .y = 0 },
                 .offset = .{ .x = 0, .y = 0 },
-                .zoom = @as(f32, @floatFromInt(scale)),
+                .zoom = ZOOM_DEFAULT,
                 .rotation = 0,
             },
             .render_texture = try rl.loadRenderTexture(width, height),
@@ -44,10 +43,10 @@ pub const Camera = struct {
 
         camera.target = .{ .x = 0, .y = 0 };
         camera.offset = .{ .x = 0, .y = 0 };
-        camera.zoom = self.scale;
+        camera.zoom = ZOOM_DEFAULT;
     }
 
-    pub fn update(self: *Camera) void {
+    pub fn update(self: *Camera, mouse_pos: rl.Vector2) void {
         const camera = &self.camera;
 
         // Move
@@ -60,8 +59,13 @@ pub const Camera = struct {
         // Zoom
         const wheel = rl.getMouseWheelMove();
         if (wheel != 0) {
-            const mouseWorldPos = rl.getScreenToWorld2D(rl.getMousePosition(), camera.*);
-            camera.offset = rl.getMousePosition();
+            const mouse_pos_offset = rl.Vector2.init(
+                mouse_pos.x - BORDER_SIZE_LEFT,
+                mouse_pos.y - BORDER_SIZE_TOP,
+            );
+
+            const mouseWorldPos = rl.getScreenToWorld2D(mouse_pos_offset, camera.*);
+            camera.offset = mouse_pos_offset;
             // Set the target to match, so that the camera maps the world space point
             // under the cursor to the screen space point under the cursor at any zoom
             camera.target = mouseWorldPos;
@@ -71,7 +75,7 @@ pub const Camera = struct {
             if (wheel < 0) {
                 scaleFactor = 1.0 / scaleFactor;
             }
-            camera.zoom = rl.math.clamp(camera.zoom * scaleFactor, self.scale, MAX_ZOOM);
+            camera.zoom = rl.math.clamp(camera.zoom * scaleFactor, ZOOM_DEFAULT, ZOOM_MAX);
         }
 
         // Clamp to screen edges
@@ -120,7 +124,9 @@ pub const Camera = struct {
     pub fn renderEnd(self: *Camera) void {
         self.camera.end();
         self.render_texture.end();
+    }
 
+    pub fn renderTexture(self: *Camera) void {
         rl.drawTextureRec(
             self.render_texture.texture,
             rl.Rectangle.init(

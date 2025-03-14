@@ -5,11 +5,13 @@ const parseInt = std.fmt.parseInt;
 const parseUnsigned = std.fmt.parseUnsigned;
 
 const GridSpec = @import("grid.zig").GridSpec;
+const GameSpec = @import("game.zig").GameSpec;
 
 // ***** //
 
-pub fn parseArgs(allocator: Allocator) !GridSpec {
-    // TODO: add min and max size + check nb bombs
+const DEFAULT_SCALE = 2;
+
+pub fn parseArgs(allocator: Allocator) !GameSpec {
     const args = try std.process.argsAlloc(allocator);
     defer std.process.argsFree(allocator, args);
 
@@ -21,20 +23,40 @@ pub fn parseArgs(allocator: Allocator) !GridSpec {
         exitSuccess();
     }
 
+    var game_spec: GameSpec = GameSpec{
+        .grid_spec = undefined,
+        .scale = DEFAULT_SCALE, // default scale
+    };
+
     if (args.len == 2) {
-        if (memEql(u8, args[1], "beginner")) return GridSpec.beginner;
-        if (memEql(u8, args[1], "intermediate")) return GridSpec.intermediate;
-        if (memEql(u8, args[1], "expert")) return GridSpec.expert;
+        const grid_spec = getGridDifficulty(args[1]);
+
+        if (grid_spec) |val| {
+            game_spec.grid_spec = val;
+        } else {
+            exitError();
+        }
+
+        return game_spec;
     } else {
-        return initCustomGrid(args) catch {
+        game_spec.grid_spec = initCustomGrid(args) catch {
             exitError();
             unreachable;
         };
+        return game_spec;
     }
 
     exitError();
 
     unreachable;
+}
+
+fn getGridDifficulty(difficulty: []const u8) ?GridSpec {
+    if (memEql(u8, difficulty, "beginner")) return GridSpec.beginner;
+    if (memEql(u8, difficulty, "intermediate")) return GridSpec.intermediate;
+    if (memEql(u8, difficulty, "expert")) return GridSpec.expert;
+
+    return null;
 }
 
 fn initCustomGrid(args: [][]u8) !GridSpec {

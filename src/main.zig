@@ -10,9 +10,9 @@ pub fn main() !void {
     const allocator = gpa.allocator();
     defer _ = gpa.deinit();
 
-    const grid_spec = try parseArgs(allocator);
+    const game_spec = try parseArgs(allocator);
 
-    try game.init(allocator, grid_spec);
+    try game.init(allocator, game_spec);
     defer game.deinit(allocator);
 
     game.run();
