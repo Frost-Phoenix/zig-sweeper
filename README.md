@@ -3,9 +3,9 @@
 A Windows XP inspired Minesweeper game in Zig, using Raylib for graphics.
 
 <p align="center">
-    <img src="./screenshots/beginner.png" width="164px" />
-    <img src="./screenshots/intermediate.png" width="276px" />
-    <img src="./screenshots/expert.png" width="500px" />
+    <img src="./screenshots/beginner.png" />
+    <img src="./screenshots/intermediate.png" />
+    <img src="./screenshots/expert.png" />
 </p>
 
 ## Features
