@@ -26,7 +26,7 @@
 ### other
 
 - [x] flake
+- [x] Write a readme
 - [ ] implement a solver
 - [ ] update to zig 0.14.0
 - [ ] better argument parsing
-- [ ] Write a readme
