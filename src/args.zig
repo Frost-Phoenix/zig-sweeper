@@ -123,7 +123,7 @@ fn printHelp(writer: std.fs.File) void {
         \\
         \\  <nb_cols>               between 5 and 115
         \\  <nb_rows>               between 5 and  70
-        \\  <nb_bombs>              must be less that total number of cells
+        \\  <nb_bombs>              must be less than nb_cols * nb_rows
         \\
         \\General Options:
         \\
@@ -132,7 +132,7 @@ fn printHelp(writer: std.fs.File) void {
         \\
         \\Keybinds:
         \\
-        \\  <ESQ>                   Quit
+        \\  <ESC>                   Quit
         \\   <n>                    Generate new grid
         \\   <o>                    Open all cells
         \\   <r>                    Reset grid zoom and position
