@@ -102,11 +102,9 @@ Mouse:
 
 ## Screenshots
 
-<p align="center">
-    <img src="./screenshots/beginner.png" />
-    <img src="./screenshots/intermediate.png" />
-    <img src="./screenshots/expert.png" />
-</p>
+| | | |
+|:-------------------------:|:-------------------------:|:-------------------------:|
+| <img  src="./screenshots/beginner.png"> beginner | <img  src="./screenshots/intermediate.png"> intermediate | <img src="./screenshots/expert.png"> expert |
 
 ## TODO
 
