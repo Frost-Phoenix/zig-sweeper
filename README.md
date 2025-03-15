@@ -2,12 +2,6 @@
 
 A Windows XP inspired Minesweeper game in Zig, using Raylib for graphics.
 
-<p align="center">
-    <img src="./screenshots/beginner.png" />
-    <img src="./screenshots/intermediate.png" />
-    <img src="./screenshots/expert.png" />
-</p>
-
 ## Features
 
 - All 3 classic minesweeper modes:
@@ -105,6 +99,14 @@ Mouse:
   middle click            Drag grid when zoomed in
   wheel scroll            Zoom grid in/out
 ```
+
+## Screenshots
+
+<p align="center">
+    <img src="./screenshots/beginner.png" />
+    <img src="./screenshots/intermediate.png" />
+    <img src="./screenshots/expert.png" />
+</p>
 
 ## TODO
 
