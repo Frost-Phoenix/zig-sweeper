@@ -81,11 +81,11 @@
 
           # Executables required for runtime
           # These packages will be added to the PATH
-          zigWrapperBins = nativeBuildInputs;
+          zigWrapperBins = nativeBuildInputs ++ buildInputs;
 
           # Libraries required for runtime
           # These packages will be added to the LD_LIBRARY_PATH
-          zigWrapperLibs = with env.pkgs; [ ];
+          zigWrapperLibs = nativeBuildInputs ++ buildInputs;
         });
 
         # For bundling with nix bundle for running outside of nix
@@ -98,7 +98,7 @@
         # nix run .
         apps.default = {
           type = "app";
-          program = "${packages.default}/bin/zig-sweeper \"$@\"";
+          program = "${packages.default}/bin/zig-sweeper";
         };
 
         # nix run .#build

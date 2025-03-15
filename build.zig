@@ -21,7 +21,8 @@ pub fn build(b: *std.Build) !void {
     const raylib_dep = b.dependency("raylib_zig", .{
         .target = target,
         .optimize = optimize,
-        .shared = true,
+        // .shared = true,
+        .linux_display_backend = .X11,
     });
 
     const raylib = raylib_dep.module("raylib");
@@ -48,7 +49,12 @@ pub fn build(b: *std.Build) !void {
         return;
     }
 
-    const exe = b.addExecutable(.{ .name = "zig-sweeper", .root_source_file = b.path("src/main.zig"), .optimize = optimize, .target = target });
+    const exe = b.addExecutable(.{
+        .name = "zig-sweeper",
+        .root_source_file = b.path("src/main.zig"),
+        .optimize = optimize,
+        .target = target,
+    });
 
     addAssets(b, exe);
 
