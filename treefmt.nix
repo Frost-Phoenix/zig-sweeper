@@ -9,6 +9,7 @@
     "*.png"
     "*.lock"
     "*.zon2json-lock"
+    "LICENSE"
   ];
 
   programs = {
