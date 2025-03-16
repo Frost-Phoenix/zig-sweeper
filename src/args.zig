@@ -72,9 +72,9 @@ pub fn parseArgs(allocator: Allocator) !GameSpec {
 }
 
 fn getGridDifficulty(difficulty: []const u8) ?GridSpec {
-    if (memEql(u8, difficulty, "beginner")) return GridSpec.beginner;
-    if (memEql(u8, difficulty, "intermediate")) return GridSpec.intermediate;
-    if (memEql(u8, difficulty, "expert")) return GridSpec.expert;
+    if (memEql(u8, difficulty, "beginner")) return .beginner;
+    if (memEql(u8, difficulty, "intermediate")) return .intermediate;
+    if (memEql(u8, difficulty, "expert")) return .expert;
 
     return null;
 }

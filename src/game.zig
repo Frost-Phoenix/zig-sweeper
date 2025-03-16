@@ -6,6 +6,7 @@ const BUILD_MODE = @import("builtin").mode;
 const rl = @import("raylib");
 const Color = rl.Color;
 const Vector2 = rl.Vector2;
+const Rectangle = rl.Rectangle;
 
 const Cell = @import("grid.zig").Cell;
 const Grid = @import("grid.zig").Grid;
@@ -73,13 +74,13 @@ pub fn init(allocator: Allocator, game_spec: GameSpec) !void {
     scale = game_spec.scale;
     game_state = .playing;
     button_state = .normal;
-    grid = Grid.init(allocator, grid_spec);
+    grid = .init(allocator, grid_spec);
 
     try initRaylib(nb_rows, nb_cols);
-    camera = try Camera.init(
+    camera = try .init(
         @intCast(nb_cols * CELL_SIZE),
         @intCast(nb_rows * CELL_SIZE),
-        Vector2.init(BORDER_SIZE_LEFT, BORDER_SIZE_TOP),
+        .init(BORDER_SIZE_LEFT, BORDER_SIZE_TOP),
     );
 }
 
@@ -160,7 +161,7 @@ fn updateGrid() void {
 fn getMousePos() Vector2 {
     const mouse_pos_scaled = rl.getMousePosition();
 
-    return Vector2.init(
+    return .init(
         mouse_pos_scaled.x / @as(f32, @floatFromInt(scale)),
         mouse_pos_scaled.y / @as(f32, @floatFromInt(scale)),
     );
@@ -208,8 +209,8 @@ fn isMouseOnButton(mouse_pos: Vector2) bool {
     const sw_f = @as(f32, @floatFromInt(screen_width));
     const sw_h = @divFloor(sw_f, 2);
 
-    const start = Vector2.init(sw_h - 10, 16);
-    const end = Vector2.init(sw_h - 10 + BUTTON_SIZE, 16 + BUTTON_SIZE);
+    const start: Vector2 = .init(sw_h - 10, 16);
+    const end: Vector2 = .init(sw_h - 10 + BUTTON_SIZE, 16 + BUTTON_SIZE);
 
     return start.x <= x and x <= end.x and start.y <= y and y <= end.y;
 }
@@ -257,25 +258,25 @@ fn render() void {
         rl.beginDrawing();
         defer rl.endDrawing();
 
-        const src = rl.Rectangle.init(
+        const src: Rectangle = .init(
             0,
             0,
             @as(f32, @floatFromInt(screen_width)),
             -@as(f32, @floatFromInt(screen_height)),
         );
-        const dest = rl.Rectangle.init(
+        const dest: Rectangle = .init(
             0,
             0,
             @as(f32, @floatFromInt(screen_width * scale)),
             @as(f32, @floatFromInt(screen_height * scale)),
         );
-        rl.drawTexturePro(render_texture.texture, src, dest, Vector2.init(0, 0), 0, Color.white);
+        rl.drawTexturePro(render_texture.texture, src, dest, .init(0, 0), 0, .white);
     }
 }
 
 fn renderBorders() void {
     const bg0 = rl.getColor(0x1D2021ff);
-    const bg1 = Color.fromInt(0x282828ff);
+    const bg1 = rl.getColor(0x282828ff);
     const fg0 = rl.getColor(0x504945ff);
 
     const sw = screen_width;
@@ -287,28 +288,28 @@ fn renderBorders() void {
     rl.clearBackground(bg1);
 
     // Main border
-    rl.drawLineEx(Vector2.init(0, 1), Vector2.init(sw_f, 1), 3, fg0);
-    rl.drawLineEx(Vector2.init(2, 0), Vector2.init(2, sh_f), 3, fg0);
+    rl.drawLineEx(.init(0, 1), .init(sw_f, 1), 3, fg0);
+    rl.drawLineEx(.init(2, 0), .init(2, sh_f), 3, fg0);
 
     // Grid border
-    rl.drawLineEx(Vector2.init(9, 53), Vector2.init(sw_f - 6, 53), 3, bg0);
-    rl.drawLineEx(Vector2.init(11, 53), Vector2.init(11, sh_f - 6), 3, bg0);
-    rl.drawLineEx(Vector2.init(10, sh_f - 7), Vector2.init(sw_f - 5, sh_f - 7), 3, fg0);
-    rl.drawLineEx(Vector2.init(sw_f - 6, 53), Vector2.init(sw_f - 6, sh_f - 6), 3, fg0);
-    rl.drawPixelV(Vector2.init(sw_f - 8, 53), bg0);
-    rl.drawPixelV(Vector2.init(sw_f - 8, 54), bg1);
-    rl.drawPixelV(Vector2.init(sw_f - 7, 53), bg1);
-    rl.drawPixelV(Vector2.init(10, sh_f - 8), bg0);
-    rl.drawPixelV(Vector2.init(11, sh_f - 8), bg1);
-    rl.drawPixelV(Vector2.init(10, sh_f - 7), bg1);
+    rl.drawLineEx(.init(9, 53), .init(sw_f - 6, 53), 3, bg0);
+    rl.drawLineEx(.init(11, 53), .init(11, sh_f - 6), 3, bg0);
+    rl.drawLineEx(.init(10, sh_f - 7), .init(sw_f - 5, sh_f - 7), 3, fg0);
+    rl.drawLineEx(.init(sw_f - 6, 53), .init(sw_f - 6, sh_f - 6), 3, fg0);
+    rl.drawPixelV(.init(sw_f - 8, 53), bg0);
+    rl.drawPixelV(.init(sw_f - 8, 54), bg1);
+    rl.drawPixelV(.init(sw_f - 7, 53), bg1);
+    rl.drawPixelV(.init(10, sh_f - 8), bg0);
+    rl.drawPixelV(.init(11, sh_f - 8), bg1);
+    rl.drawPixelV(.init(10, sh_f - 7), bg1);
 
     // Top box border
-    rl.drawLineEx(Vector2.init(9, 10), Vector2.init(sw_f - 6, 10), 2, bg0);
-    rl.drawLineEx(Vector2.init(10, 9), Vector2.init(10, 45), 2, bg0);
-    rl.drawLineEx(Vector2.init(10, 45), Vector2.init(sw_f - 5, 45), 2, fg0);
-    rl.drawLineEx(Vector2.init(sw_f - 6, 10), Vector2.init(sw_f - 6, 45), 2, fg0);
-    rl.drawPixelV(Vector2.init(10, 44), bg1);
-    rl.drawPixelV(Vector2.init(sw_f - 7, 10), bg1);
+    rl.drawLineEx(.init(9, 10), .init(sw_f - 6, 10), 2, bg0);
+    rl.drawLineEx(.init(10, 9), .init(10, 45), 2, bg0);
+    rl.drawLineEx(.init(10, 45), .init(sw_f - 5, 45), 2, fg0);
+    rl.drawLineEx(.init(sw_f - 6, 10), .init(sw_f - 6, 45), 2, fg0);
+    rl.drawPixelV(.init(10, 44), bg1);
+    rl.drawPixelV(.init(sw_f - 7, 10), bg1);
 
     // Button border
     rl.drawLine(sw_h - 11, 15, sw_h + 14, 15, bg0);
@@ -363,10 +364,10 @@ fn renderBombCount() void {
         const offset = @as(f32, @floatFromInt(i));
         const texture_offset = texture_offsets[i] * NUMBER_WIDTH;
 
-        const src = rl.Rectangle.init(texture_offset, 0, NUMBER_WIDTH, NUMBER_HEIGHT);
-        const dest = Vector2.init(17 + offset * NUMBER_WIDTH, 16);
+        const src: Rectangle = .init(texture_offset, 0, NUMBER_WIDTH, NUMBER_HEIGHT);
+        const dest: Vector2 = .init(17 + offset * NUMBER_WIDTH, 16);
 
-        rl.drawTextureRec(numbers_texture, src, dest, Color.white);
+        rl.drawTextureRec(numbers_texture, src, dest, .white);
     }
 }
 
@@ -377,10 +378,10 @@ fn renderButton() void {
     const offset: i32 = @intCast(@intFromEnum(button_state));
     const texture_offset = @as(f32, @floatFromInt(offset * BUTTON_SIZE));
 
-    const src = rl.Rectangle.init(texture_offset, 0, BUTTON_SIZE, BUTTON_SIZE);
-    const dest = Vector2.init(sw_h - 10, 16);
+    const src: Rectangle = .init(texture_offset, 0, BUTTON_SIZE, BUTTON_SIZE);
+    const dest: Vector2 = .init(sw_h - 10, 16);
 
-    rl.drawTextureRec(buttons_texture, src, dest, Color.white);
+    rl.drawTextureRec(buttons_texture, src, dest, .white);
 }
 
 fn renderTimer() void {
@@ -408,10 +409,10 @@ fn renderTimer() void {
             texture_offset = 0;
         }
 
-        const src = rl.Rectangle.init(texture_offset, 0, NUMBER_WIDTH, NUMBER_HEIGHT);
-        const dest = Vector2.init(sw_f - 54 + offset * NUMBER_WIDTH, 16);
+        const src: Rectangle = .init(texture_offset, 0, NUMBER_WIDTH, NUMBER_HEIGHT);
+        const dest: Vector2 = .init(sw_f - 54 + offset * NUMBER_WIDTH, 16);
 
-        rl.drawTextureRec(numbers_texture, src, dest, Color.white);
+        rl.drawTextureRec(numbers_texture, src, dest, .white);
     }
 }
 
@@ -426,10 +427,10 @@ fn renderGrid() void {
             const offset_idx = getCellTextureOffset(cell);
             const offset_px = @as(f32, @floatFromInt(offset_idx * CELL_SIZE));
 
-            const src = rl.Rectangle.init(offset_px, 0, CELL_SIZE, CELL_SIZE);
-            const dest = Vector2.init(x, y);
+            const src: Rectangle = .init(offset_px, 0, CELL_SIZE, CELL_SIZE);
+            const dest: Vector2 = .init(x, y);
 
-            rl.drawTextureRec(cells_texture, src, dest, Color.white);
+            rl.drawTextureRec(cells_texture, src, dest, .white);
         }
     }
 }

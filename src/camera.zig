@@ -62,7 +62,7 @@ pub const Camera = struct {
         // Zoom
         const wheel = rl.getMouseWheelMove();
         if (wheel != 0) {
-            const mouse_pos_offset = rl.Vector2.init(
+            const mouse_pos_offset: rl.Vector2 = .init(
                 mouse_pos.x - BORDER_SIZE_LEFT,
                 mouse_pos.y - BORDER_SIZE_TOP,
             );
@@ -102,7 +102,7 @@ pub const Camera = struct {
     }
 
     pub fn getGridPosFromMouse(self: *Camera, mouse_pos: rl.Vector2) Pos {
-        const grid_mouse_pos = rl.Vector2.init(
+        const grid_mouse_pos: rl.Vector2 = .init(
             mouse_pos.x - BORDER_SIZE_LEFT,
             mouse_pos.y - BORDER_SIZE_TOP,
         );
@@ -121,7 +121,7 @@ pub const Camera = struct {
         self.render_texture.begin();
         self.camera.begin();
 
-        rl.clearBackground(rl.Color.white);
+        rl.clearBackground(.white);
     }
 
     pub fn renderEnd(self: *Camera) void {
@@ -132,14 +132,14 @@ pub const Camera = struct {
     pub fn renderTexture(self: *Camera) void {
         rl.drawTextureRec(
             self.render_texture.texture,
-            rl.Rectangle.init(
+            .init(
                 0,
                 0,
                 self.width,
                 -self.height,
             ),
             self.offset,
-            rl.Color.white,
+            .white,
         );
     }
 };
