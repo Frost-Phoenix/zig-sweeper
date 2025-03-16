@@ -3,7 +3,7 @@
 
   inputs = {
     zig2nix.url = "github:Cloudef/zig2nix";
-    zls.url = "github:zigtools/zls?ref=0.13.0";
+    zls.url = "github:zigtools/zls?ref=0.14.0";
 
     treefmt-nix.url = "github:numtide/treefmt-nix";
     zigimports.url = "github:frost-phoenix/zigimports";
@@ -27,7 +27,7 @@
         # Check the flake.nix in zig2nix project for more options:
         # <https://github.com/Cloudef/zig2nix/blob/master/flake.nix>
         env = zig2nix.outputs.zig-env.${system} {
-          zig = zig2nix.outputs.packages.${system}.zig-0_13_0;
+          zig = zig2nix.outputs.packages.${system}.zig-0_14_0;
         };
 
         zlsPkg = zls.packages.${system}.default;
@@ -53,6 +53,7 @@
           xorg.libXrandr
 
           # Wayland
+          wayland
           wayland.dev
         ];
       in
@@ -115,9 +116,6 @@
 
         # nix run .#test
         apps.test = env.app [ ] "zig build test -- \"$@\"";
-
-        # nix run .#docs
-        apps.docs = env.app [ ] "zig build docs -- \"$@\"";
 
         # nix run .#zig2nix
         apps.zig2nix = env.app [ ] "zig2nix \"$@\"";

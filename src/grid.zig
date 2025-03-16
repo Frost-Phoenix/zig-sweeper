@@ -76,7 +76,7 @@ pub const Grid = struct {
 
     fn plantBombs(self: *Grid) void {
         // TODO: change this prng
-        var prng = std.rand.DefaultPrng.init(blk: {
+        var prng = std.Random.DefaultPrng.init(blk: {
             var seed: u64 = undefined;
             std.posix.getrandom(std.mem.asBytes(&seed)) catch unreachable;
             break :blk seed;
@@ -216,7 +216,7 @@ pub const Grid = struct {
 
                     if (!self.isInBound(row, col)) continue;
 
-                    const offset_pos = .{
+                    const offset_pos: Pos = .{
                         .row = @as(usize, @intCast(row)),
                         .col = @as(usize, @intCast(col)),
                     };

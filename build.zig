@@ -1,5 +1,5 @@
 const std = @import("std");
-const rlz = @import("raylib-zig");
+const rlz = @import("raylib_zig");
 
 fn addAssets(b: *std.Build, exe: *std.Build.Step.Compile) void {
     const assets = [_]struct { []const u8, []const u8 }{
@@ -18,9 +18,10 @@ pub fn build(b: *std.Build) !void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
 
-    const raylib_dep = b.dependency("raylib-zig", .{
+    const raylib_dep = b.dependency("raylib_zig", .{
         .target = target,
         .optimize = optimize,
+        .linux_display_backend = .X11,
     });
 
     const raylib = raylib_dep.module("raylib");
@@ -47,7 +48,12 @@ pub fn build(b: *std.Build) !void {
         return;
     }
 
-    const exe = b.addExecutable(.{ .name = "zig-sweeper", .root_source_file = b.path("src/main.zig"), .optimize = optimize, .target = target });
+    const exe = b.addExecutable(.{
+        .name = "zig-sweeper",
+        .root_source_file = b.path("src/main.zig"),
+        .optimize = optimize,
+        .target = target,
+    });
 
     addAssets(b, exe);
     exe.linkLibrary(raylib_artifact);
