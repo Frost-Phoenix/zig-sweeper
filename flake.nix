@@ -35,7 +35,6 @@
         zigimportsPkg = zigimports.outputs.packages.${system}.default;
 
         nativeBuildInputs = with env.pkgs; [
-          pkg-config
           wayland-scanner
         ];
 
@@ -60,29 +59,6 @@
       with builtins;
       with env.pkgs.lib;
       rec {
-        # Default package
-        # nix build .
-        packages.default = env.package {
-          src = cleanSource ./.;
-
-          # Packages required for compiling
-          nativeBuildInputs = nativeBuildInputs;
-
-          # Packages required for linking
-          buildInputs = buildInputs;
-
-          # Executables required for runtime
-          # These packages will be added to the PATH
-          zigWrapperBins = [ ];
-
-          # Libraries required for runtime
-          # These packages will be added to the LD_LIBRARY_PATH
-          zigWrapperLibs = buildInputs;
-
-          # Smaller binaries and avoids shipping glibc.
-          zigPreferMusl = false;
-        };
-
         # Produces clean binaries meant to be ship'd outside of nix
         # nix build .#foreign
         packages.foreign = env.package {
@@ -97,6 +73,20 @@
           # Smaller binaries and avoids shipping glibc.
           zigPreferMusl = true;
         };
+
+        # nix build .
+        packages.default = packages.foreign.override (attrs: {
+          # Prefer nix friendly settings.
+          zigPreferMusl = false;
+
+          # Executables required for runtime
+          # These packages will be added to the PATH
+          zigWrapperBins = [ ];
+
+          # Libraries required for runtime
+          # These packages will be added to the LD_LIBRARY_PATH
+          zigWrapperLibs = buildInputs;
+        });
 
         # For bundling with nix bundle for running outside of nix
         # example: https://github.com/ralismark/nix-appimage
@@ -127,7 +117,6 @@
           # Packages required for compiling, linking and running
           # Libraries added here will be automatically added to the LD_LIBRARY_PATH and PKG_CONFIG_PATH
           nativeBuildInputs =
-            with env.pkgs;
             [
               zlsPkg
               zigimportsPkg
